@@ -16,7 +16,7 @@ import (
 )
 
 var botIDs chan int = make(chan int, 20) //存储botid
-var ROI_RATE float64 = 1.005             //千分之3为收益率
+var ROI_RATE float64 = 1.006             //千分之3为收益率
 var BOT_DEF_AMOUNT float64 = 5           //默认分配给bot的可用金额
 
 var BOT_DEF_CURRENCY api.CurrencyPair = api.XRP_USDT //默认分配给bot的购买比比对
