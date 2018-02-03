@@ -106,7 +106,7 @@ func SellOut(latestOrder *api.Order, bot *Bot , speed int64) (*api.Order, error)
 	sellPrice := latestOrder.Price * roiRate
 
 	ticker, err := bot.Exchange.GetTicker(bot.CurrencyPair)
-	if err == nil {
+	if err != nil {
 		Printf("[%s]  [%s %s-USDT] 挂卖单时获取Ticker出错，message: %s\n",
 			TimeNow(),bot.Exchange.GetExchangeName(), bot.Name, err.Error())
 		return nil,retErr
@@ -371,8 +371,8 @@ func zbExchange(exchange api.API)  {
 	/////////// zb bot ////////////
 
 	oldTime:=time.Unix(1480390585, 0)
-	maxBotCnt := 1
-	/*
+	maxBotCnt := 10
+
 	//HSR bot
 	hsrBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
 		0, oldTime, 0, 0.0, 0,
@@ -390,7 +390,7 @@ func zbExchange(exchange api.API)  {
 	go startBots(btcBot, maxBotCnt)
 
 	time.Sleep(time.Second)
-	*/
+
 
 	//ETH bot
 	ethBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
