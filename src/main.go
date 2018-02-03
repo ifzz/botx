@@ -171,7 +171,7 @@ func Start(bot *Bot) {
 
 	var orderID string = ""
 
-	var speed int64 =0 ////speed 挂卖出单，到卖出单交易成功的时间间隔
+	var speed int64 =1000000 ////speed 挂卖出单，到卖出单交易成功的时间间隔
 
 	for systemExit == false{
 
@@ -391,7 +391,7 @@ func zbExchange(exchange api.API)  {
 
 	time.Sleep(time.Second)
 	*/
-	/*
+
 	//ETH bot
 	ethBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
 		0, oldTime, 0, 0.0, 0,
@@ -399,7 +399,7 @@ func zbExchange(exchange api.API)  {
 		"%.2f", "%.3f", "ETH", time.Now()} //初始化
 	go startBots(ethBot, maxBotCnt)
 	time.Sleep(time.Second)
-	*/
+
 	/*
 	//ETC bot
 	etcBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
