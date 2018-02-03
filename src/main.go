@@ -87,6 +87,7 @@ func BuyIn(amount float64, latestOrder *api.Order, bot *Bot) (*api.Order, error)
 }
 func SellOut(latestOrder *api.Order, bot *Bot , speed int64) (*api.Order, error) {
 
+	retErr := errors.New("挂卖单失败")
 	strSellAmount := Sprintf(bot.AmountDecimel, latestOrder.Amount)
 
 	roiRate:=ROI_RATE
@@ -104,8 +105,18 @@ func SellOut(latestOrder *api.Order, bot *Bot , speed int64) (*api.Order, error)
 	}
 	sellPrice := latestOrder.Price * roiRate
 
+	ticker, err := bot.Exchange.GetTicker(bot.CurrencyPair)
+	if err == nil {
+		Printf("[%s]  [%s %s-USDT] 挂卖单时获取Ticker出错，message: %s\n",
+			TimeNow(),bot.Exchange.GetExchangeName(), bot.Name, err.Error())
+		return nil,retErr
+	}
+	if ticker.Sell > sellPrice { //如果收益计算后比当前市场卖价格低，直接挂市场卖价
+		sellPrice = ticker.Sell
+	}
+
 	strSellPrice := Sprintf(bot.PriceDecimel, sellPrice)
-	retErr := errors.New("挂卖单失败")
+
 	order, err := bot.Exchange.LimitSell(strSellAmount, strSellPrice, bot.CurrencyPair)
 	if nil == err {
 		Printf("[%s] [%s %s-USDT] 挂卖出单 ok : %d，价格:%s / %s \n",
