@@ -373,15 +373,6 @@ func zbExchange(exchange api.API)  {
 	oldTime:=time.Unix(1480390585, 0)
 	maxBotCnt := 10
 
-	//HSR bot
-	hsrBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
-		0, oldTime, 0, 0.0, 0,
-		api.HSR_USDT, exchange, 1.0,
-		"%.2f", "%.2f", "HSR", time.Now()} //初始化
-	go startBots(hsrBot, maxBotCnt)
-
-	time.Sleep(time.Second)
-
 	//BTC bot
 	btcBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
 		0, oldTime, 0, 0.0, 0,
@@ -416,6 +407,16 @@ func zbExchange(exchange api.API)  {
 		"%.2f", "%.3f", "BCC",time.Now()} //初始化
 	go startBots(bccBot, maxBotCnt)
 	time.Sleep(time.Second)
+
+	//HSR bot
+	hsrBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
+		0, oldTime, 0, 0.0, 0,
+		api.HSR_USDT, exchange, 1.0,
+		"%.2f", "%.2f", "HSR", time.Now()} //初始化
+	go startBots(hsrBot, maxBotCnt)
+
+	time.Sleep(time.Second)
+	
 	/*
 	//LTC bot
 	ltcBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
