@@ -540,13 +540,13 @@ func main() {
 	zbbalanceBegin := getBalance(zbexchange, nil)
 	zbExchange(zbexchange)
 
+	/*
 	//okex exchange
 	var okexchange = okcoin.NewOKExSpot(http.DefaultClient,
 		"d5af1693-a715-4c43-8abe-b125dc627f1f", "B1429568E021445F587B953012E53D2F")
 	okbalanceBegin := getBalance(okexchange, nil)
-
-	//okExchange(okexchange)
-
+	okExchange(okexchange)
+	*/
 	//Println("xxx")
 	for systemExit == false { //主线程等待
 
@@ -558,12 +558,14 @@ func main() {
 		Printf("[%s] [zb-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
 			TimeNow(), zbbalanceBegin, zbbalanceNow, rate)
 
+		/*
 		//okex收益
 		okbalanceNow := getBalance(okexchange, nil)
 		rate = (api.ToFloat64(okbalanceNow) - api.ToFloat64(okbalanceBegin)) / api.ToFloat64(okbalanceBegin)
 		rate = rate * 100
 		Printf("[%s] [okex-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
 			TimeNow(), okbalanceBegin, okbalanceNow, rate)
+		*/
 
 		time.Sleep(10 * time.Minute)
 
