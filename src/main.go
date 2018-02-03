@@ -2,7 +2,7 @@ package main
 
 import (
 	api "./api"
-	//"./api/okcoin"
+	"./api/okcoin"
 	"./api/zb"
 	"errors"
 	. "fmt"
@@ -369,7 +369,6 @@ func startBots(bot Bot, maxCnt int)  {
 func zbExchange(exchange api.API)  {
 
 	/////////// zb bot ////////////
-
 	oldTime:=time.Unix(1480390585, 0)
 	maxBotCnt := 10
 
@@ -400,6 +399,7 @@ func zbExchange(exchange api.API)  {
 	go startBots(etcBot, maxBotCnt)
 	time.Sleep(time.Second)
 	*/
+	/*
 	//BCC bot
 	bccBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
 		0, oldTime, 0, 0.0, 0,
@@ -416,7 +416,7 @@ func zbExchange(exchange api.API)  {
 	go startBots(hsrBot, maxBotCnt)
 
 	time.Sleep(time.Second)
-
+	*/
 	/*
 	//LTC bot
 	ltcBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
@@ -427,64 +427,33 @@ func zbExchange(exchange api.API)  {
 	*/
 
 }
-/*
-func okExchange()  {
 
+func okExchange(exchange api.API)  {
 
 	//////////OK Bot///////////////
-	var exchange = okcoin.NewOKExSpot(http.DefaultClient,
-		"d5af1693-a715-4c43-8abe-b125dc627f1f", "B1429568E021445F587B953012E53D2F")
-	acctBegin, err := exchange.GetAccount()
-	if err != nil {
-		Printf("[%s] 获取账户出错，系统退出，错误信息：%s\n", TimeNow(), err.Error())
-		return
-	}
-	beginAct := acctBegin.SubAccounts[api.USDT].Amount
+	oldTime:=time.Unix(1480390585, 0)
+	maxBotCnt := 10
 
-	count := 1
-	var bots [20]Bot
+	//BTC bot
+	btcBot :=  Bot{0, 1, 0.0,
+		0, oldTime, 0, 0.0, 0,
+		api.BTC_USDT, exchange, 1.0,
+		"%.4f", "%.3f", "BTC",time.Now()} //初始化
+	go startBots(btcBot, maxBotCnt)
 
-	//bot start，启动策略
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < count; i++ {
-		bots[i] = Bot{i + 1, BOT_DEF_AMOUNT, 0.0,
-			0, 0, 0, 0.0, 0,
-			api.HSR_USDT, exchange, 1.0,
-			"%.2f", "%.2f"} //初始化
-		go Start(&bots[i])
-
-		//设置bot启动间隔，10分钟启动一个
-		time.Sleep(10 * time.Minute + r.Intn(1000000))
-	}
+	time.Sleep(time.Second)
 
 
-	for { //祝线程等待
-		time.Sleep(time.Minute)
-
-		//计算收益率情况
-		roiRate := 0.0
-		counter := 0
-		for i := 0; i < count; i++ {
-			roiRate += bots[i].RoiRate
-			counter += bots[i].Counter
-		}
-
-		acct, err := exchange.GetAccount()
-
-		if err != nil {
-			Printf("[%s] 主程序获取账户出错，继续，错误信息：%s\n", TimeNow(), err.Error())
-			continue
-		}
-		currentAct := acct.SubAccounts[api.USDT].Amount
-		Printf("[%s] USDT 开始余额: %.4f, 当前余额: %.4f，累积成交对：%d，累积收益率：%.4f\n",
-			TimeNow(), beginAct, currentAct, counter, roiRate)
-
-		//Printf("当前账户余额:%.4f, %.4f，收益：%.4f\n",acct.Asset,acct.NetAsset, acct.Asset - acctBegin.Asset)
-
-	}
+	//ETH bot
+	ethBot :=  Bot{0, 1, 0.0,
+		0, oldTime, 0, 0.0, 0,
+		api.ETH_USDT, exchange, 1.0,
+		"%.4f", "%.3f", "ETH", time.Now()} //初始化
+	go startBots(ethBot, maxBotCnt)
+	time.Sleep(time.Second)
 
 }
-*/
+
 func getBalance(exchange api.API, currency *api.Currency) string {
 	acc, err := exchange.GetAccount()
 	if err != nil {
@@ -544,7 +513,6 @@ func ExitFunc()  {
 }
 func main() {
 
-	
 	//创建监听退出chan
 	c := make(chan os.Signal)
 	//监听指定信号 ctrl+c kill
@@ -566,21 +534,36 @@ func main() {
 		}
 	}()
 
+	//zb exchange
 	var zbexchange = zb.New(http.DefaultClient,
 		"0fd724ff-5cca-4eb6-acc2-1009ee58d4bc", "fc38cc52-b1d0-4ff6-abb1-4b540763a30e")
-
-
 	zbbalanceBegin := getBalance(zbexchange, nil)
 	zbExchange(zbexchange)
+
+	//okex exchange
+	var okexchange = okcoin.NewOKExSpot(http.DefaultClient,
+		"d5af1693-a715-4c43-8abe-b125dc627f1f", "B1429568E021445F587B953012E53D2F")
+	okbalanceBegin := getBalance(okexchange, nil)
+
+	//okExchange(okexchange)
+
 	//Println("xxx")
 	for systemExit == false { //主线程等待
 
 		//获取盈利情况
-		balanceNow := getBalance(zbexchange, nil)
-		rate:= (api.ToFloat64(balanceNow) - api.ToFloat64(zbbalanceBegin)) / api.ToFloat64(zbbalanceBegin)
+		//zb收益
+		zbbalanceNow := getBalance(zbexchange, nil)
+		rate:= (api.ToFloat64(zbbalanceNow) - api.ToFloat64(zbbalanceBegin)) / api.ToFloat64(zbbalanceBegin)
 		rate = rate * 100
 		Printf("[%s] [zb-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
-			TimeNow(), zbbalanceBegin, balanceNow, rate)
+			TimeNow(), zbbalanceBegin, zbbalanceNow, rate)
+
+		//okex收益
+		okbalanceNow := getBalance(okexchange, nil)
+		rate = (api.ToFloat64(okbalanceNow) - api.ToFloat64(okbalanceBegin)) / api.ToFloat64(okbalanceBegin)
+		rate = rate * 100
+		Printf("[%s] [okex-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
+			TimeNow(), okbalanceBegin, okbalanceNow, rate)
 
 		time.Sleep(10 * time.Minute)
 
