@@ -416,7 +416,7 @@ func zbExchange(exchange api.API)  {
 	go startBots(hsrBot, maxBotCnt)
 
 	time.Sleep(time.Second)
-	
+
 	/*
 	//LTC bot
 	ltcBot :=  Bot{0, BOT_DEF_AMOUNT, 0.0,
@@ -514,15 +514,19 @@ func getBalance(exchange api.API, currency *api.Currency) string {
 		}else {//get full
 			amount := subItem.Amount + subItem.ForzenAmount
 
-			if amount > 0  && curr != api.USDT {
-				ticker, err := exchange.GetTicker(api.CurrencyPair{curr, api.USDT})
-				if err != nil {
-					Printf("[%s] getBalance of %s error of get ticker , err message: %s\n",
-						TimeNow(), curr.String(), err.Error())
-					continue//忽略掉
+			if amount > 0 {
+				if curr != api.USDT {
+					ticker, err := exchange.GetTicker(api.CurrencyPair{curr, api.USDT})
+					if err != nil {
+						Printf("[%s] getBalance of %s error of get ticker , err message: %s\n",
+							TimeNow(), curr.String(), err.Error())
+						continue //忽略掉
+					}
+					//Printf("%s,%.4f\n",curr.String(), amount)
+					balance += amount * ticker.Last
+				} else {
+					balance += amount
 				}
-				//Printf("%s,%.4f\n",curr.String(), amount)
-				balance += amount * ticker.Last
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
