@@ -2,7 +2,7 @@ package main
 
 import (
 	api "./api"
-	//"./api/okcoin"
+	"./api/okcoin"
 	"./api/zb"
 	"errors"
 	. "fmt"
@@ -13,6 +13,10 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"io/ioutil"
+	"encoding/xml"
+	"flag"
+	"strings"
 )
 
 var botIDs chan int = make(chan int, 20) //存储botid
@@ -22,6 +26,28 @@ var BOT_DEF_AMOUNT float64 = 5           //默认分配给bot的可用金额
 var BOT_DEF_CURRENCY api.CurrencyPair = api.XRP_USDT //默认分配给bot的购买比比对
 
 var systemExit bool = false
+
+type CoinArray struct{
+	Enable bool `xml:"enable"`
+	Name string `xml:"name"`
+	Pair string `xml:"pair"`
+	PriceDecimel string 	`xml:"priceDecimel"`
+	AmountDecimel string 	`xml:"amountDecimel"`
+}
+type Exchange struct {
+	Enable bool `xml:"enable"`
+	Name string `xml:"name"`
+	ApiKey string `xml:"apiKey"`
+	SecretKey string `xml:"secretKey"`
+	RoiRate float64 `xml:"roiRate`
+	BuyLimitMoney float64 `xml:"buyLimitMoney"`
+	Coins []CoinArray `xml:"coins"`
+	MaxBotNum int `xml:"maxBotNum"`
+}
+type Configure struct {
+	System string `xml:"system"`
+	Exchanges []Exchange `xml:"exchanges"`
+}
 
 type Bot struct {
 	ID           int              // BotID
@@ -52,6 +78,7 @@ func (bot *Bot) Start() {
 	//1. 检查行情
 }
 
+
 //var zbcom = zb.New(http.DefaultClient, "0fd724ff-5cca-4eb6-acc2-1009ee58d4bc", "fc38cc52-b1d0-4ff6-abb1-4b540763a30e")
 //var okexSpot = okcoin.NewOKExSpot(http.DefaultClient, "d5af1693-a715-4c43-8abe-b125dc627f1f", "B1429568E021445F587B953012E53D2F")
 
@@ -67,6 +94,7 @@ func BuyIn(amount float64, latestOrder *api.Order, bot *Bot) (*api.Order, error)
 	//Printf("买入价格: %.4f\n", ticker.Buy)
 
 	buyPrice := ticker.Buy
+	buyPrice += 0.01
 	buyAmount := amount / buyPrice
 	strbuyAmount := Sprintf(bot.AmountDecimel, buyAmount)
 	strBuyPrice := Sprintf(bot.PriceDecimel, buyPrice)
@@ -114,6 +142,7 @@ func SellOut(latestOrder *api.Order, bot *Bot , speed int64) (*api.Order, error)
 	if ticker.Sell > sellPrice { //如果收益计算后比当前市场卖价格低，直接挂市场卖价
 		sellPrice = ticker.Sell
 	}
+	sellPrice -= 0.01
 
 	strSellPrice := Sprintf(bot.PriceDecimel, sellPrice)
 
@@ -454,6 +483,41 @@ func okExchange(exchange api.API)  {
 
 }
 
+func startExchange(exchange api.API, cfg Exchange)  {
+
+	Printf("[%s] 启动%s bot\n",TimeNow(),exchange.GetExchangeName() )
+	balanceBegin := getBalance(exchange, nil)
+
+	oldTime:=time.Unix(1480390585, 0)
+	for _, coin := range cfg.Coins {
+		if coin.Enable == false {
+			continue
+		}
+		Printf("[%s] %s - [%s-USDT] 启动状态 \n",TimeNow(),exchange.GetExchangeName(),coin.Name )
+		pair:= api.CurrencyPair{api.Currency{coin.Name,""}, api.USDT}
+		coinBot :=  Bot{0, 1, 0.0,
+			0, oldTime, 0, 0.0, 0,
+			pair, exchange, 1.0,
+			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now()} //初始化
+		go startBots(coinBot, cfg.MaxBotNum)
+		time.Sleep(time.Second)
+	}
+
+	for systemExit == false { //主线程等待
+
+		//获取盈利情况//计算收益
+		balanceNow := getBalance(exchange, nil)
+		rate:= (api.ToFloat64(balanceNow) - api.ToFloat64(balanceBegin)) / api.ToFloat64(balanceBegin)
+		rate = rate * 100
+		Printf("[%s] [%s-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
+			TimeNow(),exchange.GetExchangeName(), balanceBegin, balanceNow, rate)
+
+		time.Sleep(10 * time.Minute)
+
+	}
+
+}
+
 func getBalance(exchange api.API, currency *api.Currency) string {
 	acc, err := exchange.GetAccount()
 	if err != nil {
@@ -511,8 +575,40 @@ func ExitFunc()  {
 
 	os.Exit(0)
 }
+
+func loadConfigure(filePath string) *Configure {
+
+	var cfg *Configure = nil
+	file, err := os.Open(filePath) // For read access.
+	if err != nil {
+		Printf("error: %v", err)
+		return cfg
+	}
+	defer file.Close()
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		Printf("error: %v", err)
+		return cfg
+	}
+	v := Configure{}
+	err = xml.Unmarshal(data, &v)
+	if err != nil {
+		Printf("error: %v", err)
+		return cfg
+	}
+	return cfg
+}
 func main() {
 
+
+	configFile := flag.String("conf", ":../conf/config.xml", "load config file")
+
+	config := loadConfigure(*configFile)
+
+	if config == nil {
+		Printf("[%s] 加载配置文件失败，系统正在退出\n", TimeNow())
+		return
+	}
 	//创建监听退出chan
 	c := make(chan os.Signal)
 	//监听指定信号 ctrl+c kill
@@ -534,42 +630,35 @@ func main() {
 		}
 	}()
 
-	//zb exchange
-	var zbexchange = zb.New(http.DefaultClient,
-		"0fd724ff-5cca-4eb6-acc2-1009ee58d4bc", "fc38cc52-b1d0-4ff6-abb1-4b540763a30e")
-	zbbalanceBegin := getBalance(zbexchange, nil)
-	zbExchange(zbexchange)
+	for _,v:= range config.Exchanges {
+		var exchange api.API
+		switch strings.ToUpper(v.Name) {
+		case "ZB":
+			Printf("[%s] zb\n", TimeNow())
+			exchange = zb.New(http.DefaultClient,
+				v.ApiKey, v.SecretKey)
+			break;
+		case "OKEX":
+			Printf("[%s] ok\n", TimeNow())
+			exchange = okcoin.NewOKExSpot(http.DefaultClient, v.ApiKey, v.SecretKey)
+			break
+		default:
+			break
+		}
 
-	/*
-	//okex exchange
-	var okexchange = okcoin.NewOKExSpot(http.DefaultClient,
-		"d5af1693-a715-4c43-8abe-b125dc627f1f", "B1429568E021445F587B953012E53D2F")
-	okbalanceBegin := getBalance(okexchange, nil)
-	okExchange(okexchange)
-	*/
-	//Println("xxx")
+		if v.Enable == true {
+			go startExchange(exchange, v)
+		} else {
+			Printf("[%s] not enable\n", TimeNow())
+		}
+	}
+
 	for systemExit == false { //主线程等待
-
-		//获取盈利情况
-		//zb收益
-		zbbalanceNow := getBalance(zbexchange, nil)
-		rate:= (api.ToFloat64(zbbalanceNow) - api.ToFloat64(zbbalanceBegin)) / api.ToFloat64(zbbalanceBegin)
-		rate = rate * 100
-		Printf("[%s] [zb-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
-			TimeNow(), zbbalanceBegin, zbbalanceNow, rate)
-
-		/*
-		//okex收益
-		okbalanceNow := getBalance(okexchange, nil)
-		rate = (api.ToFloat64(okbalanceNow) - api.ToFloat64(okbalanceBegin)) / api.ToFloat64(okbalanceBegin)
-		rate = rate * 100
-		Printf("[%s] [okex-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
-			TimeNow(), okbalanceBegin, okbalanceNow, rate)
-		*/
 
 		time.Sleep(10 * time.Minute)
 
 	}
 
+	Printf("[%s] 系统正在退出\n", TimeNow())
 
 }

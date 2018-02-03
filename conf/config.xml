@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<servers version="1">
+    <system></system>
+    <exchanges>
+        <exchange>
+            <enable>0</enable>
+            <name>zb.com</name>
+            <apiKey></apiKey>
+            <secretKey></secretKey>
+            <roiRate>1.006</roiRate>
+            <buyLimitMoney>5</buyLimitMoney>
+            <coins>
+                <coin>
+                    <name>BTC</name>
+                    <pair>BTC_USDT</pair>
+                </coin>
+            </coins>
+        </exchange>
+    </exchanges>
+</servers>
