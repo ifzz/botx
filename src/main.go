@@ -17,6 +17,7 @@ import (
 	"encoding/xml"
 	"flag"
 	"strings"
+	"path/filepath"
 )
 
 var botIDs chan int = make(chan int, 20) //存储botid
@@ -600,6 +601,7 @@ func loadConfigure(filePath string) *Configure {
 }
 func main() {
 
+	Println(filepath.Dir(os.Args[0]))
 
 	configFile := flag.String("conf", ":../conf/config.xml", "load config file")
 
