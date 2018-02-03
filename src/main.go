@@ -2,7 +2,7 @@ package main
 
 import (
 	api "./api"
-	"./api/okcoin"
+	//"./api/okcoin"
 	"./api/zb"
 	"errors"
 	. "fmt"
