@@ -212,7 +212,7 @@ func Start(bot *Bot) {
 					bot.Timestamp = time.Now()
 
 					//TODO TEST 交易完成一次，则退出
-					break
+					//break
 				}
 
 			} else if latestOrder.Status == api.ORDER_FINISH && latestOrder.Side == api.SELL {
