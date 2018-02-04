@@ -199,7 +199,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 	for systemExit == false{
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(time.Second)
 		acct, err := bot.Exchange.GetAccount()
 		if err != nil {
 			Printf("[%s] [%s %s-USDT] bot :%d 获取账户出错，继续， 信息：%s\n",
@@ -364,29 +364,36 @@ func startBots(bot Bot, exchangeCfg SExchange)  {
 
 	currCnt:=0
 
+	timer := 0
+
 	for systemExit == false{
 
 		//满足一定条件，启动一个新的bot
+		if timer <= 0 {
+			//计算收益率情况, roi
+			roiWell, counter:=roiCalculate(bots, currBotID)
 
-		//计算收益率情况, roi
-		roiWell, counter:=roiCalculate(bots, currBotID)
+			//只要有收益，就可以启动新的bot
+			if roiWell==true && maxCnt > currCnt {
+				bots[currBotID] = bot //初始化
+				bots[currBotID].ID = currBotID + 1 //修改ID
+				bots[currBotID].StartTime = time.Now() //启动时间
+				go Start(&bots[currBotID], exchangeCfg)
+				currCnt++
+			}
 
-		//只要有收益，就可以启动新的bot
-		if roiWell==true && maxCnt > currCnt {
-			bots[currBotID] = bot //初始化
-			bots[currBotID].ID = currBotID + 1 //修改ID
-			bots[currBotID].StartTime = time.Now() //启动时间
-			go Start(&bots[currBotID], exchangeCfg)
-			currCnt++
+			if counter > 0 && time.Now().Minute() % 10 == 0 { //10分钟打印一次
+				Printf("[%s] [%s %s-USDT] 累积成交对：%d\n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, counter)
+			}
+
+			//设置间隔，10分钟
+			timer = int(time.Duration( 10 * time.Minute + time.Duration(r.Intn(1000000))))
 		}
+		timer--
 
-		//设置间隔，10分钟
-		span := time.Duration( 10 * time.Minute + time.Duration(r.Intn(1000000)))
-		time.Sleep(span)
+		time.Sleep(5 * time.Second)
 
-
-		Printf("[%s] [%s %s-USDT] 累积成交对：%d\n",
-			TimeNow(),bot.Exchange.GetExchangeName(), bot.Name, counter)
 	}
 
 }
@@ -413,14 +420,17 @@ func startExchange(exchange api.API, exchangeCfg SExchange)  {
 
 	for systemExit == false { //主线程等待
 
-		//获取盈利情况//计算收益
-		balanceNow := getBalance(exchange, nil)
-		rate:= (api.ToFloat64(balanceNow) - api.ToFloat64(balanceBegin)) / api.ToFloat64(balanceBegin)
-		rate = rate * 100
-		Printf("[%s] [%s-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
-			TimeNow(),exchange.GetExchangeName(), balanceBegin, balanceNow, rate)
+		if time.Now().Minute() % 10 == 0 {//10分钟打印一次
+			//获取盈利情况//计算收益
+			balanceNow := getBalance(exchange, nil)
+			rate:= (api.ToFloat64(balanceNow) - api.ToFloat64(balanceBegin)) / api.ToFloat64(balanceBegin)
+			rate = rate * 100
+			Printf("[%s] [%s-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
+				TimeNow(),exchange.GetExchangeName(), balanceBegin, balanceNow, rate)
 
-		time.Sleep(10 * time.Minute)
+		}
+
+		time.Sleep(5 * time.Second)
 
 	}
 
@@ -512,8 +522,6 @@ func loadConfigure(filePath string) (Configure, error) {
 
 func main() {
 
-	//Println(filepath.Dir(os.Args[0]))
-
 	configFile := flag.String("conf", "../conf/config.xml", "load config file")
 
 	config ,err:= loadConfigure(*configFile)
@@ -530,14 +538,12 @@ func main() {
 		for s := range c {
 			switch s {
 			case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-				Println("系统退出", s)
+				Printf("[%s] 接收到退出信号，即将退出\n", TimeNow())
 				ExitFunc()
-			case syscall.SIGUSR1:
-				Println("usr1", s)
-			case syscall.SIGUSR2:
-				Println("usr2", s)
+				break
 			default:
-				Println("other", s)
+				Printf("[%s] 接收到sys信号，即将退出\n", TimeNow())
+				break
 			}
 			time.Sleep(time.Second)
 		}
@@ -571,7 +577,7 @@ func main() {
 
 	for systemExit == false { //主线程等待
 
-		time.Sleep(time.Second)
+		time.Sleep(5 * time.Second)
 
 	}
 
