@@ -1,20 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<servers version="1">
-    <system></system>
+<config version="1">
+    <system>botx</system>
     <exchanges>
         <exchange>
             <enable>0</enable>
-            <name>zb.com</name>
+            <name>zb</name>
             <apiKey></apiKey>
             <secretKey></secretKey>
-            <roiRate>1.006</roiRate>
+            <roiRate>0.006</roiRate>
             <buyLimitMoney>5</buyLimitMoney>
+            <maxBotNum>5</maxBotNum>
             <coins>
                 <coin>
+                    <enable>0</enable>
                     <name>BTC</name>
                     <pair>BTC_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.4f</amountDecimel>
+                </coin>
+                <coin>
+                    <enable>0</enable>
+                    <name>ETH</name>
+                    <pair>ETH_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                </coin>
+                <coin>
+                    <enable>0</enable>
+                    <name>ETC</name>
+                    <pair>ETC_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.2f</amountDecimel>
+                </coin>
+                <coin>
+                    <enable>0</enable>
+                    <name>BCC</name>
+                    <pair>BCC_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                </coin>
+                <coin>
+                    <enable>0</enable>
+                    <name>HSR</name>
+                    <pair>HSR_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.2f</amountDecimel>
+                </coin>
+            </coins>
+        </exchange>
+        <exchange>
+            <enable>0</enable>
+            <name>okex</name>
+            <apiKey></apiKey>
+            <secretKey></secretKey>
+            <roiRate>0.006</roiRate>
+            <buyLimitMoney>5</buyLimitMoney>
+            <maxBotNum>5</maxBotNum>
+            <coins>
+                <coin>
+                    <enable>0</enable>
+                    <name>BTC</name>
+                    <pair>BTC_USDT</pair>
+                    <priceDecimel>%.4f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                </coin>
+                <coin>
+                    <enable>0</enable>
+                    <name>ETH</name>
+                    <pair>ETH_USDT</pair>
+                    <priceDecimel>%.4f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
                 </coin>
             </coins>
         </exchange>
     </exchanges>
-</servers>
+</config>
