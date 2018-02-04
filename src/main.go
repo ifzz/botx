@@ -409,8 +409,8 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 		}
 		Printf("[%s] %s - [%s-USDT] 启动状态 \n", TimeNow(), exchange.GetExchangeName(), coin.Name)
 		pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
-		coinBot := Bot{0, 1, 0.0,
-			0, oldTime, 0, 0.0, 0,
+		coinBot := Bot{0, exchangeCfg.BuyLimitMoney, 0.0,
+			0, oldTime, 0, exchangeCfg.RoiRate, 0,
 			pair, exchange, 1.0,
 			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now()} //初始化
 		go startBots(coinBot, exchangeCfg)
@@ -550,7 +550,7 @@ func main() {
 	}()
 
 	for _, v := range config.Exchanges.Exchange {
-		Println("xxx")
+
 		var exchange api.API
 		switch strings.ToUpper(v.Name) {
 		case "ZB":
