@@ -24,7 +24,7 @@ var systemExit bool = false
 type Configure struct {
 	XMLName   xml.Name   `xml:"config"`
 	System    string     `xml:"system"`
-	Exchanges SExchanges `xml:"exchanges""`
+	Exchanges SExchanges `xml:"exchanges"`
 }
 type SExchanges struct {
 	Exchange []SExchange `xml:"exchange"`
@@ -34,7 +34,7 @@ type SExchange struct {
 	Name          string  `xml:"name"`
 	ApiKey        string  `xml:"apiKey"`
 	SecretKey     string  `xml:"secretKey"`
-	RoiRate       float64 `xml:"roiRate`
+	RoiRate       float64 `xml:"roiRate"`
 	BuyLimitMoney float64 `xml:"buyLimitMoney"`
 	Coins         SCoins  `xml:"coins"`
 	MaxBotNum     int     `xml:"maxBotNum"`
