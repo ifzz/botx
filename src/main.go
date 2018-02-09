@@ -4,15 +4,15 @@ import (
 	api "./api"
 	"./api/okcoin"
 	"./api/zb"
+	"./stratage"
+	. "./common"
 	"errors"
 	. "fmt"
 	"math/rand"
 	"net/http"
 	"time"
 
-	"encoding/xml"
 	"flag"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"strings"
@@ -21,35 +21,6 @@ import (
 
 var systemExit bool = false
 
-type Configure struct {
-	XMLName   xml.Name   `xml:"config"`
-	System    string     `xml:"system"`
-	Exchanges SExchanges `xml:"exchanges"`
-}
-type SExchanges struct {
-	Exchange []SExchange `xml:"exchange"`
-}
-type SExchange struct {
-	Enable        bool    `xml:"enable"`
-	Name          string  `xml:"name"`
-	ApiKey        string  `xml:"apiKey"`
-	SecretKey     string  `xml:"secretKey"`
-	RoiRate       float64 `xml:"roiRate"`
-	BuyLimitMoney float64 `xml:"buyLimitMoney"`
-	Coins         SCoins  `xml:"coins"`
-	MaxBotNum     int     `xml:"maxBotNum"`
-}
-type SCoins struct {
-	Coin []SCoin `xml:"coin"`
-}
-
-type SCoin struct {
-	Enable        bool   `xml:"enable"`
-	Name          string `xml:"name"`
-	Pair          string `xml:"pair"`
-	PriceDecimel  string `xml:"priceDecimel"`
-	AmountDecimel string `xml:"amountDecimel"`
-}
 
 type Bot struct {
 	ID           int              // BotID
@@ -183,9 +154,7 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
 }
 
-func TimeNow() string {
-	return time.Now().Format("2006-01-02 15:04:05")
-}
+
 
 func Start(bot *Bot, exchangeCfg SExchange) {
 
@@ -275,18 +244,30 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				Printf("[%s] [%s %s-USDT] 订单号：%s 被取消 \n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
 				orderID = ""
-			} else {
+			} else {//订单未完成状态
 
 				//如果长时间(1小时)未成交，且为买入单，尝试取消订单
-				if latestOrder.Side == api.BUY && (time.Now().Unix()-bot.Timestamp.Unix()) > 3600 {
+				//一直未买入成功
+				if latestOrder.Side == api.BUY &&
+					int(time.Now().Unix()-bot.Timestamp.Unix()) > exchangeCfg.TimeoutBuyOrder {
+
 					shouldCancel, cerr := tryCancelOrder(latestOrder, bot)
 					if cerr == nil && shouldCancel == true {
 						//需要取消订单，且已经成功
-						Printf("[%s] [%s %s-USDT] 取消订单:%s 成功\n",
+						Printf("[%s] [%s %s-USDT] 因长时间未买入成功，取消订单:%s 成功\n",
 							TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
 						orderID = ""
 
 					}
+				}else if latestOrder.Side == api.SELL &&
+					int(time.Now().Unix()-bot.Timestamp.Unix()) > exchangeCfg.TimeoutSellOrder {
+					//如果是卖出单，但是长时间未成交，直接忽略该订单
+					//一直未卖出成功
+					//不取消订单，直接置未空
+					Printf("[%s] [%s %s-USDT] 订单:%s 长时间未卖出成功，跳出继续买入\n",
+						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
+					orderID = ""
+
 				}
 			}
 
@@ -435,6 +416,10 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 
 }
 
+func exchangeObserve(exchange api.API, exchangeCfg SExchange) {
+	stratage.Start(exchange, exchangeCfg)
+}
+
 /*
 get Balance
 */
@@ -497,34 +482,13 @@ func ExitFunc() {
 	os.Exit(0)
 }
 
-func loadConfigure(filePath string) (Configure, error) {
-
-	var cfg Configure
-	file, err := os.Open(filePath) // For read access.
-	if err != nil {
-		Printf("error: %v", err)
-		return cfg, errors.New("open config file failed")
-	}
-	defer file.Close()
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		Printf("error: %v", err)
-		return cfg, errors.New("read file failed")
-	}
-
-	err = xml.Unmarshal(data, &cfg)
-	if err != nil {
-		Printf("error: %v", err)
-		return cfg, errors.New("xml parse failed")
-	}
-	return cfg, nil
-}
 
 func main() {
 
 	configFile := flag.String("c", "../conf/config.xml", "load config file")
+	model := flag.String("m","small","exchange model (default in small model)")
 	flag.Parse()
-	config, err := loadConfigure(*configFile)
+	config, err := LoadConfigure(*configFile)
 
 	if err != nil {
 		Printf("[%s] 加载配置文件失败，系统正在退出\n", TimeNow())
@@ -567,8 +531,15 @@ func main() {
 		}
 
 		if v.Enable == true {
+			switch strings.ToUpper(*model) {
+			case "SMALL":
+				go startExchange(exchange, v)
+				break;
+			case "ALLIN":
+				go exchangeObserve(exchange, v)
+				break;
+			}
 
-			go startExchange(exchange, v)
 		} else {
 			Printf("[%s] %s not enable\n", TimeNow(), v.Name)
 		}
