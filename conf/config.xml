@@ -10,6 +10,8 @@
             <roiRate>0.006</roiRate>
             <buyLimitMoney>5</buyLimitMoney>
             <maxBotNum>5</maxBotNum>
+            <timeoutBuyOrder>360</timeoutBuyOrder>
+            <timeoutSellOrder>360</timeoutSellOrder>
             <coins>
                 <coin>
                     <enable>0</enable>
@@ -56,6 +58,8 @@
             <roiRate>0.006</roiRate>
             <buyLimitMoney>5</buyLimitMoney>
             <maxBotNum>5</maxBotNum>
+            <timeoutBuyOrder>360</timeoutBuyOrder>
+            <timeoutSellOrder>360</timeoutSellOrder>
             <coins>
                 <coin>
                     <enable>0</enable>
