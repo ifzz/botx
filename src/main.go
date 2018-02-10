@@ -276,7 +276,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 		//检查订单状态
 		if orderID != "" {
 			latestOrder, err := bot.Exchange.GetOneOrder(orderID, bot.CurrencyPair)
-			if err != nil {
+			if err != nil || latestOrder == nil {
 				Printf("[%s] [%s %s-USDT] 读取订单(%s)状态失败：%s\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID, err.Error())
 				continue
