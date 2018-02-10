@@ -119,7 +119,7 @@ func (ctx *OKCoinCN_API) placeOrder(side, amount, price string, currency Currenc
 
 	order := new(Order)
 	order.OrderID = int(respMap["order_id"].(float64))
-	order.OrderID2 = fmt.Sprintf("%f", respMap["order_id"].(float64))
+	order.OrderID2 = fmt.Sprintf("%.0f", respMap["order_id"].(float64))
 	order.Price, _ = strconv.ParseFloat(price, 64)
 	order.Amount, _ = strconv.ParseFloat(amount, 64)
 	order.Currency = currency
@@ -211,7 +211,7 @@ func (ctx *OKCoinCN_API) getOrders(orderId string, currency CurrencyPair) ([]Ord
 		var order Order
 		order.Currency = currency
 		order.OrderID = int(orderMap["order_id"].(float64))
-		order.OrderID2 = fmt.Sprintf("%f", orderMap["order_id"].(float64))
+		order.OrderID2 = fmt.Sprintf("%.0f", orderMap["order_id"].(float64))
 		order.Amount = orderMap["amount"].(float64)
 		order.Price = orderMap["price"].(float64)
 		order.DealAmount = orderMap["deal_amount"].(float64)
