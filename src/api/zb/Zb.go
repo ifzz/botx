@@ -52,6 +52,9 @@ func (zb *Zb) GetTicker(currency CurrencyPair) (*Ticker, error) {
 	if resp["error"] != nil {
 		return nil,  errors.New(resp["error"].(string))
 	}
+	if resp["ticker"] == nil {
+		return nil,  errors.New("ticker return is nill")
+	}
 	tickermap := resp["ticker"].(map[string]interface{})
 
 	ticker := new(Ticker)
@@ -72,8 +75,10 @@ func (zb *Zb) GetDepth(size int, currency CurrencyPair) (*Depth, error) {
 		return nil, err
 	}
 
-	log.Println(resp)
-
+	//log.Println(resp)
+	if resp["asks"] == nil || resp["bids"] == nil {
+		return nil, errors.New("return asks , bids is nil")
+	}
 	asks := resp["asks"].([]interface{})
 	bids := resp["bids"].([]interface{})
 
