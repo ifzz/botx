@@ -17,6 +17,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"math"
 )
 
 var systemExit bool = false
@@ -47,16 +48,11 @@ type Bot struct {
 func BuyIn(amount float64, latestOrder *api.Order, bot *Bot) (*api.Order, error) {
 	retErr := errors.New(TimeNow() + "挂买单失败")
 
-	ticker, err := bot.Exchange.GetTicker(bot.CurrencyPair)
-	if err != nil {
-		Printf("[%s] [%s %s-USDT] 获取Ticker出错，msg: %s\n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error())
+	buyPrice := calcBuyPrice(bot.Exchange, bot.CurrencyPair,bot.RoiRate)
+	if buyPrice == 0 {
+		Printf("[%s] [%s %s-USDT] 获取买入价格失败\n",TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
 		return nil, retErr
 	}
-	//Printf("买入价格: %.4f\n", ticker.Buy)
-
-	buyPrice := ticker.Buy
-	buyPrice += 0.01
 	buyAmount := amount / buyPrice
 	strbuyAmount := Sprintf(bot.AmountDecimel, buyAmount)
 	strBuyPrice := Sprintf(bot.PriceDecimel, buyPrice)
@@ -75,7 +71,93 @@ func BuyIn(amount float64, latestOrder *api.Order, bot *Bot) (*api.Order, error)
 	}
 	return order, retErr
 }
+func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) float64  {
+	var price float64 = 0
+	ticker, err := exchange.GetTicker(pair)
+	if err != nil {
+		return price
+	}
 
+	price = ticker.Buy
+
+	depth, err:= exchange.GetDepth(50, pair)
+	if err == nil {
+
+		avAskPrice := 0.0
+		avAskAmount := 0.0
+		avBidPrice := 0.0
+		avBidAmount := 0.0
+		cnt := 0
+		//卖方深度
+		for _, ask := range depth.AskList {
+			avAskPrice += ask.Price * ask.Amount
+			avAskAmount += ask.Amount
+			cnt++
+		}
+		avAskPrice = avAskPrice / avAskAmount
+
+		//买方深度
+		for _, bid := range depth.BidList {
+			avBidPrice += bid.Price * bid.Amount
+			avBidAmount += bid.Amount
+		}
+		avBidPrice = avBidPrice / avBidAmount
+
+		if roiRate * price > avAskPrice {
+			//根据现在的roiRate，卖出价格超出了平均卖方价格，考虑暂时不做买入操作
+			Printf("[%s] [%s USDT] calcBuy Price err 1 价格：%.4f / %.4f \n",
+				TimeNow(),exchange.GetExchangeName(),price,avAskPrice)
+			price = 0
+			return price
+		}
+
+		base3BidPrice := depth.BidList[2].Price
+		base6AskPrice := depth.AskList[5].Price
+
+		if roiRate * base3BidPrice > base6AskPrice {
+			//根据现在的roiRate，卖出价格超出了平均卖方价格，考虑暂时不做买入操作
+			Printf("[%s] [%s USDT] calcBuy Price err 1 价格：%.4f / %.4f \n",
+				TimeNow(),exchange.GetExchangeName(),base3BidPrice,base6AskPrice)
+			price = 0
+			return price
+		}
+		price = math.Min(base3BidPrice, price)//使用买方第3哥价格
+	}
+	price += 0.01
+	return price
+
+}
+func calcSellPrice(depth api.Depth, orignPrice float64, minPrice float64) float64  {
+
+	var price float64 = orignPrice
+	avAskPrice := 0.0
+	avAskAmount := 0.0
+	avBidPrice := 0.0
+	avBidAmount := 0.0
+	cnt := 0
+	//卖方深度
+	for _,ask:= range depth.AskList {
+		avAskPrice += ask.Price*ask.Amount
+		avAskAmount += ask.Amount
+		cnt++
+	}
+	avAskPrice = avAskPrice / avAskAmount
+
+	//买方深度
+	for _, bid := range depth.BidList {
+		avBidPrice += bid.Price*bid.Amount
+		avBidAmount += bid.Amount
+	}
+	avBidPrice = avBidPrice / avBidAmount
+
+	base10Price := depth.AskList[9].Price
+	if orignPrice > avAskPrice || orignPrice > base10Price {
+		//如果当前设定的价格过高：高于平均卖单价格，或者高于第10层的价格，调低价格
+		tmp := math.Min(avAskPrice, base10Price)
+		price = math.Max(minPrice, tmp)
+	}
+	return price
+}
 func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64) (*api.Order, error) {
 
 	retErr := errors.New("挂卖单失败")
@@ -97,16 +179,17 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64) 
 	sellPrice := latestOrder.Price * (1 + roiRate)
 
 	ticker, err := bot.Exchange.GetTicker(bot.CurrencyPair)
-	if err != nil {
-		Printf("[%s] [%s %s-USDT] 挂卖单时获取Ticker出错，message: %s\n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error())
-		return nil, retErr
-	}
-	if ticker.Sell > sellPrice { //如果收益计算后比当前市场卖价格低，直接挂市场卖价
-		sellPrice = ticker.Sell
+	if err == nil {
+		if ticker.Sell > sellPrice { //如果收益计算后比当前市场卖价格低，直接挂市场卖价
+			sellPrice = ticker.Sell
+		}
 	}
 	sellPrice -= 0.01
 
+	depth, err:= bot.Exchange.GetDepth(50, bot.CurrencyPair)
+	if err == nil {
+		sellPrice = calcSellPrice(depth, sellPrice, latestOrder.Price * roiCfgRate)
+	}
 	strSellPrice := Sprintf(bot.PriceDecimel, sellPrice)
 
 	order, err := bot.Exchange.LimitSell(strSellAmount, strSellPrice, bot.CurrencyPair)
