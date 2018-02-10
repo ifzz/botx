@@ -112,12 +112,12 @@ func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) floa
 		}
 
 		base2BidPrice := depth.BidList[1].Price
-		base6AskPrice := depth.AskList[5].Price
+		base8AskPrice := depth.AskList[7].Price
 
-		if roiRate * base2BidPrice > base6AskPrice {
+		if roiRate * base2BidPrice > base8AskPrice {
 			//根据现在的roiRate，卖出价格超出了平均卖方价格，考虑暂时不做买入操作
 			Printf("[%s] [%s USDT] calcBuy Price err 1 价格：%.4f / %.4f \n",
-				TimeNow(),exchange.GetExchangeName(),base2BidPrice,base6AskPrice)
+				TimeNow(),exchange.GetExchangeName(),base2BidPrice,base8AskPrice)
 			price = 0
 			return price
 		}
