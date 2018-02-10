@@ -188,7 +188,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64) 
 
 	depth, err:= bot.Exchange.GetDepth(50, bot.CurrencyPair)
 	if err == nil {
-		sellPrice = calcSellPrice(depth, sellPrice, latestOrder.Price * roiCfgRate)
+		sellPrice = calcSellPrice(*depth, sellPrice, latestOrder.Price * roiCfgRate)
 	}
 	strSellPrice := Sprintf(bot.PriceDecimel, sellPrice)
 
