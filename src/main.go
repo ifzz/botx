@@ -111,17 +111,17 @@ func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) floa
 			return price
 		}
 
-		base3BidPrice := depth.BidList[2].Price
+		base2BidPrice := depth.BidList[1].Price
 		base6AskPrice := depth.AskList[5].Price
 
-		if roiRate * base3BidPrice > base6AskPrice {
+		if roiRate * base2BidPrice > base6AskPrice {
 			//根据现在的roiRate，卖出价格超出了平均卖方价格，考虑暂时不做买入操作
 			Printf("[%s] [%s USDT] calcBuy Price err 1 价格：%.4f / %.4f \n",
-				TimeNow(),exchange.GetExchangeName(),base3BidPrice,base6AskPrice)
+				TimeNow(),exchange.GetExchangeName(),base2BidPrice,base6AskPrice)
 			price = 0
 			return price
 		}
-		price = math.Min(base3BidPrice, price)//使用买方第3哥价格
+		price = math.Min(base2BidPrice, price)//使用买方第2哥价格
 	}
 	price += 0.01
 	return price
@@ -218,8 +218,21 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 		return shouldCancel, retErr
 	}
 
-	if (ticker.Buy / bot.Price) > 0.02 {
-		//超过2%，可以取消订单
+	depth, err:= bot.Exchange.GetDepth(50, bot.CurrencyPair)
+	idxDepth := 0
+
+	if err == nil {
+		//买方深度
+		for idx, bid := range depth.BidList {
+			if bot.Price > bid.Price {
+				idxDepth = idx
+				break
+			}
+		}
+	}
+
+	if (ticker.Buy / bot.Price) > 0.02 || idxDepth > 5 {
+		//超过2%，或者买入深度已经埋没到超过5层，可以取消订单
 		Printf("[%s] [%s %s-USDT] 取消订单，买入价格：%.4f, 现价: %.4f\n",
 			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.Price, ticker.Buy)
 		shouldCancel = true
