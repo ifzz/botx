@@ -261,13 +261,15 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 	var speed int64 = 1000000 ////speed 挂卖出单，到卖出单交易成功的时间间隔
 
+	//计算当前bot的收益情况
+
 	for systemExit == false {
 
-		time.Sleep(time.Second)
+		time.Sleep(50*time.Millisecond)
 		acct, err := bot.Exchange.GetAccount()
 		if err != nil {
 			Printf("[%s] [%s %s-USDT] bot :%d 获取账户出错，继续， 信息：%s\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, err.Error())
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, err.Error()[0:20])
 			continue
 		}
 
@@ -393,6 +395,9 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
 			}
 		}
+
+		//TODO 计算收益
+		//currBal := getBalance(bot.Exchange, &bot.CurrencyPair.CurrencyA)
 
 	}
 
