@@ -452,8 +452,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 		//TODO 计算收益
 		//currBal := getBalance(bot.Exchange, &bot.CurrencyPair.CurrencyA)
-		allBuyMoney := float64(counterBuyin) * exchangeCfg.BuyLimitMoney
-		allSellMoney := float64(counterBuyin)
+		//allBuyMoney := float64(counterBuyin) * exchangeCfg.BuyLimitMoney
+		//allSellMoney := float64(counterBuyin)
 	}
 
 	Printf("[%s] [%s %s-USDT] bot完成认为，结束\n",
