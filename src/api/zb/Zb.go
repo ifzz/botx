@@ -317,7 +317,7 @@ func (zb *Zb) GetOneOrder(orderId string, currency CurrencyPair) (*Order, error)
 	//println(string(resp))
 	ordermap := make(map[string]interface{})
 	err = json.Unmarshal(resp, &ordermap)
-	if err != nil {
+	if err != nil || ordermap == nil{
 		log.Println(err)
 		return nil, err
 	}
@@ -362,6 +362,9 @@ func (zb *Zb) GetUnfinishOrders(currency CurrencyPair) ([]Order, error) {
 	var orders []Order
 	for _, v := range resps {
 		ordermap := v.(map[string]interface{})
+		if ordermap == nil {
+			continue
+		}
 		order := Order{}
 		order.Currency = currency
 		parseOrder(&order, ordermap)
