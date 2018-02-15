@@ -12,7 +12,7 @@
             <maxBotNum>5</maxBotNum>
             <timeoutBuyOrder>360</timeoutBuyOrder>
             <timeoutSellOrder>360</timeoutSellOrder>
-            <mode>0</mode>
+            <mode>2</mode>
             <coins>
                 <coin>
                     <enable>0</enable>
