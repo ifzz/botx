@@ -308,8 +308,12 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 		time.Sleep(time.Second)
 		acct, err := bot.Exchange.GetAccount()
 		if err != nil {
+			msg:=err.Error()
+			if len(msg) > 100 {
+				msg = msg[0:100]
+			}
 			Printf("[%s] [%s %s-USDT] bot :%d 获取账户出错，继续， 信息：%s\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, err.Error()[0:100])
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, msg)
 			continue
 		}
 
