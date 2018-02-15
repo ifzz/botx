@@ -158,10 +158,12 @@ func calcSellPrice(depth api.Depth, orignPrice float64, minPrice float64) float6
 	}
 	return price
 }
-func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64) (*api.Order, error) {
 
+
+func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, mode int) (*api.Order, error) {
+
+	//以赚取coin为目标
 	retErr := errors.New("挂卖单失败")
-	strSellAmount := Sprintf(bot.AmountDecimel, latestOrder.Amount)
 
 	roiRate := roiCfgRate
 	//如果5分钟内成交，可以增大收益率
@@ -190,6 +192,37 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64) 
 	if err == nil {
 		sellPrice = calcSellPrice(*depth, sellPrice, latestOrder.Price * roiCfgRate)
 	}
+	//2018/2/15 根据mode判断卖出价格
+	strSellAmount := "0.0"
+	avalableAmount := getAvalableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
+	if mode == MODE_COIN {
+		sellAmount := latestOrder.Amount / (1 + roiRate)
+		if avalableAmount >= sellAmount {
+			strSellAmount = Sprintf(bot.AmountDecimel,sellAmount)
+		}else {
+			Printf("[%s] [%s %s-USDT] mode=coin 可用coin不足,且无法满足收益，当前可用：%.4f, 需要：%.4f \n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, avalableAmount, sellAmount)
+			return nil, errors.New("可用coin不足，且无法满足收益")
+		}
+
+	}else {
+
+		if avalableAmount >= latestOrder.Amount {//可用量足够
+
+			strSellAmount = Sprintf(bot.AmountDecimel, latestOrder.Amount)//默认使用卖出量
+
+		} else if avalableAmount < latestOrder.Amount && avalableAmount >= latestOrder.Amount / (1 + roiRate) {
+
+			//能满足收益，按可用量挂单
+			strSellAmount = Sprintf(bot.AmountDecimel, avalableAmount)
+
+		}else {//如果 coin不足，且收益无法保障
+			Printf("[%s] [%s %s-USDT] mode=money 可用coin不足,且无法满足收益，当前可用：%.4f, 需要：%.4f \n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, avalableAmount, latestOrder.Amount)
+			return nil, errors.New("可用coin不足，且无法满足收益")
+		}
+	}
+
 	strSellPrice := Sprintf(bot.PriceDecimel, sellPrice)
 
 	order, err := bot.Exchange.LimitSell(strSellAmount, strSellPrice, bot.CurrencyPair)
@@ -203,7 +236,10 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64) 
 			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error(), strSellPrice, strSellAmount)
 	}
 	return order, retErr
+
+
 }
+
 
 func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
@@ -262,6 +298,10 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	var speed int64 = 1000000 ////speed 挂卖出单，到卖出单交易成功的时间间隔
 
 	//计算当前bot的收益情况
+	var counterBuyin int64 = 0
+	var counterSellout int64 = 0
+	var counterBuyinMoney float64 = 0
+	var counterSelloutMoney float64 = 0
 
 	for systemExit == false {
 
@@ -292,7 +332,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 			if latestOrder.Status == api.ORDER_FINISH && latestOrder.Side == api.BUY {
 				//订单完成，如果是买入订单，则可以挂卖单
 				//Println(TimeNow() + "订单完成，如果是买入订单，则可以挂卖单")
-				currentOrder, cerr := SellOut(latestOrder, bot, speed, exchangeCfg.RoiRate)
+				currentOrder, cerr := SellOut(latestOrder, bot, speed, exchangeCfg.RoiRate, exchangeCfg.Mode)
 				if cerr == nil {
 					Printf("[%s] [%s %s-USDT] 挂单（卖）订单号： %d\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID)
@@ -301,6 +341,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					//完成时间
 					bot.Timestamp = time.Now()
 
+					counterSellout++
+					counterSelloutMoney += currentOrder.Price * currentOrder.Amount
 					//TODO TEST 交易完成一次，则退出
 					//break
 				}
@@ -335,6 +377,9 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 					//完成时间
 					bot.Timestamp = time.Now()
+
+					counterBuyin++
+					counterBuyinMoney += currentOrder.Price * currentOrder.Amount
 				}
 
 			} else if latestOrder.Status == api.ORDER_CANCEL {
@@ -342,6 +387,14 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				Printf("[%s] [%s %s-USDT] 订单号：%s 被取消 \n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
 				orderID = ""
+
+				if latestOrder.Side == api.SELL {
+					counterSellout--
+					counterSelloutMoney -= latestOrder.Price * latestOrder.Amount
+				}else if latestOrder.Side == api.BUY {
+					counterBuyin--
+					counterBuyinMoney -= latestOrder.Price * latestOrder.Amount
+				}
 			} else {//订单未完成状态
 
 				//如果长时间(1小时)未成交，且为买入单，尝试取消订单
@@ -355,7 +408,6 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 						Printf("[%s] [%s %s-USDT] 因长时间未买入成功，取消订单:%s 成功\n",
 							TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
 						orderID = ""
-
 					}
 				}else if latestOrder.Side == api.SELL &&
 					int(time.Now().Unix()-bot.Timestamp.Unix()) > exchangeCfg.TimeoutSellOrder {
@@ -365,7 +417,6 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					Printf("[%s] [%s %s-USDT] 订单:%s 长时间未卖出成功，跳出继续买入\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
 					orderID = ""
-
 				}
 			}
 
@@ -390,6 +441,9 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				//完成时间
 				bot.Timestamp = time.Now()
 
+				counterBuyin++
+				counterBuyinMoney += currentOrder.Price * currentOrder.Amount
+
 			} else {
 				Printf("[%s] [%s %s-USDT] 第一次进入，买入失败\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
@@ -398,7 +452,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 		//TODO 计算收益
 		//currBal := getBalance(bot.Exchange, &bot.CurrencyPair.CurrencyA)
-
+		allBuyMoney := float64(counterBuyin) * exchangeCfg.BuyLimitMoney
+		allSellMoney := float64(counterBuyin)
 	}
 
 	Printf("[%s] [%s %s-USDT] bot完成认为，结束\n",
@@ -521,6 +576,25 @@ func exchangeObserve(exchange api.API, exchangeCfg SExchange) {
 	stratage.Start(exchange, exchangeCfg)
 }
 
+func getAvalableAmount(exchange api.API, currency *api.Currency) float64 {
+
+	acc, err := exchange.GetAccount()
+	if err != nil {
+		//error
+		Printf("[%s] getBalance error , err message: %s\n", TimeNow(), err.Error())
+		return 0
+	}
+	amount := 0.0
+	for curr, subItem := range acc.SubAccounts {
+		if currency != nil {
+			if curr == *currency {
+				amount = subItem.Amount
+				break
+			}
+		}
+	}
+	return amount
+}
 /*
 get Balance
 */

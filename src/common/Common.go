@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	. "fmt"
 	"time"
+	"go/doc"
 )
 
 type Configure struct {
@@ -17,6 +18,10 @@ type Configure struct {
 type SExchanges struct {
 	Exchange []SExchange `xml:"exchange"`
 }
+const (
+	MODE_MONEY = 1	//"money"
+	MODE_COIN  =2	// "coin"
+)
 type SExchange struct {
 	Enable        bool    `xml:"enable"`
 	Name          string  `xml:"name"`
@@ -28,6 +33,7 @@ type SExchange struct {
 	TimeoutSellOrder int `xml:"timeoutSellOrder"`
 	Coins         SCoins  `xml:"coins"`
 	MaxBotNum     int     `xml:"maxBotNum"`
+	Mode     int 	`xml:"mode"`
 }
 type SCoins struct {
 	Coin []SCoin `xml:"coin"`
