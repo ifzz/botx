@@ -7,7 +7,6 @@ import (
 	"encoding/xml"
 	. "fmt"
 	"time"
-	"go/doc"
 )
 
 type Configure struct {
