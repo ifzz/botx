@@ -194,31 +194,31 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 	}
 	//2018/2/15 根据mode判断卖出价格
 	strSellAmount := "0.0"
-	avalableAmount := getAvalableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
+	availableAmount := getAvailableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
 	if mode == MODE_COIN {
 		sellAmount := latestOrder.Amount / (1 + roiRate)
-		if avalableAmount >= sellAmount {
+		if availableAmount >= sellAmount {
 			strSellAmount = Sprintf(bot.AmountDecimel,sellAmount)
 		}else {
 			Printf("[%s] [%s %s-USDT] mode=coin 可用coin不足,且无法满足收益，当前可用：%.4f, 需要：%.4f \n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, avalableAmount, sellAmount)
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, availableAmount, sellAmount)
 			return nil, errors.New("可用coin不足，且无法满足收益")
 		}
 
 	}else {
 
-		if avalableAmount >= latestOrder.Amount {//可用量足够
+		if availableAmount >= latestOrder.Amount {//可用量足够
 
 			strSellAmount = Sprintf(bot.AmountDecimel, latestOrder.Amount)//默认使用卖出量
 
-		} else if avalableAmount < latestOrder.Amount && avalableAmount >= latestOrder.Amount / (1 + roiRate) {
+		} else if availableAmount < latestOrder.Amount && availableAmount >= latestOrder.Amount / (1 + roiRate) {
 
 			//能满足收益，按可用量挂单
-			strSellAmount = Sprintf(bot.AmountDecimel, avalableAmount)
+			strSellAmount = Sprintf(bot.AmountDecimel, availableAmount)
 
 		}else {//如果 coin不足，且收益无法保障
 			Printf("[%s] [%s %s-USDT] mode=money 可用coin不足,且无法满足收益，当前可用：%.4f, 需要：%.4f \n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, avalableAmount, latestOrder.Amount)
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, availableAmount, latestOrder.Amount)
 			return nil, errors.New("可用coin不足，且无法满足收益")
 		}
 	}
@@ -576,7 +576,7 @@ func exchangeObserve(exchange api.API, exchangeCfg SExchange) {
 	stratage.Start(exchange, exchangeCfg)
 }
 
-func getAvalableAmount(exchange api.API, currency *api.Currency) float64 {
+func getAvailableAmount(exchange api.API, currency *api.Currency) float64 {
 
 	acc, err := exchange.GetAccount()
 	if err != nil {
@@ -586,12 +586,12 @@ func getAvalableAmount(exchange api.API, currency *api.Currency) float64 {
 	}
 	amount := 0.0
 	for curr, subItem := range acc.SubAccounts {
-		if currency != nil {
-			if curr == *currency {
-				amount = subItem.Amount
-				break
-			}
+
+		if curr.Symbol == currency.Symbol {
+			amount = subItem.Amount
+			break
 		}
+
 	}
 	return amount
 }
@@ -609,7 +609,7 @@ func getBalance(exchange api.API, currency *api.Currency) string {
 	for curr, subItem := range acc.SubAccounts {
 		if currency != nil {
 
-			if curr == *currency {
+			if curr.Symbol == currency.Symbol {
 				amount := subItem.Amount + subItem.ForzenAmount
 
 				if amount > 0 {
@@ -696,6 +696,10 @@ func main() {
 			Printf("[%s] zb\n", TimeNow())
 			exchange = zb.New(http.DefaultClient,
 				v.ApiKey, v.SecretKey)
+			amount:=getAvailableAmount(exchange, &api.Currency{"BTC",""})
+
+			bal := getBalance(exchange,&api.Currency{"BTC",""})
+			Printf("amount: %.4f, balance:%s\n", amount,bal)
 			break
 		case "OKEX":
 			Printf("[%s] ok\n", TimeNow())
