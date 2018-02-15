@@ -196,6 +196,8 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 	strSellAmount := "0.0"
 	availableAmount := getAvailableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
 	if mode == MODE_COIN {
+		Printf("[%s] [%s %s-USDT] mode=coin\n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
 		sellAmount := latestOrder.Amount / (1 + roiRate)
 		if availableAmount >= sellAmount {
 			strSellAmount = Sprintf(bot.AmountDecimel,sellAmount)
@@ -206,7 +208,8 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 		}
 
 	}else {
-
+		Printf("[%s] [%s %s-USDT] mode=money\n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
 		if availableAmount >= latestOrder.Amount {//可用量足够
 
 			strSellAmount = Sprintf(bot.AmountDecimel, latestOrder.Amount)//默认使用卖出量
@@ -700,10 +703,6 @@ func main() {
 			Printf("[%s] zb\n", TimeNow())
 			exchange = zb.New(http.DefaultClient,
 				v.ApiKey, v.SecretKey)
-			amount:=getAvailableAmount(exchange, &api.Currency{"BTC",""})
-
-			bal := getBalance(exchange,&api.Currency{"BTC",""})
-			Printf("amount: %.4f, balance:%s\n", amount,bal)
 			break
 		case "OKEX":
 			Printf("[%s] ok\n", TimeNow())
