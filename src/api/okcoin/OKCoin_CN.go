@@ -458,15 +458,16 @@ func (ctx *OKCoinCN_API) GetKlineRecords(currency CurrencyPair, period, size, si
 			case 0:
 				r.Timestamp = int64(e.(float64)) / 1000 //to unix timestramp
 			case 1:
-				r.Open = e.(float64)
+				r.Open,_ = strconv.ParseFloat(e.(string),64)
+				//fmt.Printf("xx %s, %.4f\n", e.(string), r.Open)
 			case 2:
-				r.High = e.(float64)
+				r.High ,_ = strconv.ParseFloat(e.(string),64)
 			case 3:
-				r.Low = e.(float64)
+				r.Low ,_ = strconv.ParseFloat(e.(string),64)
 			case 4:
-				r.Close = e.(float64)
+				r.Close ,_ = strconv.ParseFloat(e.(string),64)
 			case 5:
-				r.Vol = e.(float64)
+				r.Vol ,_ = strconv.ParseFloat(e.(string),64)
 			}
 		}
 		klineRecords = append(klineRecords, r)

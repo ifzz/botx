@@ -25,7 +25,8 @@ var systemExit bool = false
 
 type Bot struct {
 	ID           int              // BotID
-	Amount       float64          //当前账户使用金额
+	LimitMoney       float64       //当前账户使用金额
+	LimitAmount 	float64 	//limit buy in amount, if it's 0, LimitMoney will be used
 	Price        float64          //当前价格
 	Type         int              //类型：0，1分别代表买入，卖出
 	Timestamp    time.Time        //当前时间
@@ -46,7 +47,7 @@ type Bot struct {
 }
 
 //买入
-func BuyIn(amount float64, latestOrder *api.Order, bot *Bot, roiRateCfg float64) (*api.Order, error) {
+func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiRateCfg float64) (*api.Order, error) {
 	retErr := errors.New(TimeNow() + "挂买单失败")
 
 	buyPrice := calcBuyPrice(bot.Exchange, bot.CurrencyPair,roiRateCfg)
@@ -54,7 +55,12 @@ func BuyIn(amount float64, latestOrder *api.Order, bot *Bot, roiRateCfg float64)
 		Printf("[%s] [%s %s-USDT] 获取买入价格失败\n",TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
 		return nil, retErr
 	}
-	buyAmount := amount / buyPrice
+
+	buyAmount:= amount
+	if buyAmount == 0 {//如果不是按照量买入，则根据买入现金计算买入量，否则直接按照最小买入量
+		buyAmount = money / buyPrice
+	}
+
 	strbuyAmount := Sprintf(bot.AmountDecimel, buyAmount)
 	strBuyPrice := Sprintf(bot.PriceDecimel, buyPrice)
 	//xx,_:=strconv.ParseFloat(strBuyPrice, 32)
@@ -325,7 +331,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 			continue
 		}
 
-		currentAct := acct.SubAccounts[api.USDT].Amount
+		currentUSDTAmount := acct.SubAccounts[api.USDT].Amount
 
 		//检查订单状态
 		if orderID != "" {
@@ -367,15 +373,15 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 				//TODO,仓位管理，如果小于80%仓位，不要买入，不能满仓
 				//TODO,对于完成很快的bot，适当调整增加买入量
-				if currentAct < bot.Amount {
+				if currentUSDTAmount < bot.LimitAmount {
 					//Printf("[%s][%s %s-USDT]  账户余额不足 :%.4f\n",
-					//	TimeNow(),bot.Exchange.GetExchangeName(),bot.Name, currentAct)
+					//	TimeNow(),bot.Exchange.GetExchangeName(),bot.Name, currentUSDTAmount)
 					continue
 				}
 
 				//Println(TimeNow() + "订单完成，如果是卖出订单，可以挂买单")
 
-				currentOrder, cerr := BuyIn(bot.Amount, latestOrder, bot, exchangeCfg.RoiRate)
+				currentOrder, cerr := BuyIn(bot.LimitMoney, bot.LimitAmount, latestOrder, bot, exchangeCfg.RoiRate)
 				if cerr == nil {
 					Printf("[%s] [%s %s-USDT] 挂单（买）成功，订单号：%d\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID)
@@ -435,16 +441,16 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 		} else {
 			//第一次进入，直接尝试买入
 
-			if currentAct < bot.Amount {
+			if currentUSDTAmount < bot.LimitAmount {
 				//Printf("[%s]  [%s %s-USDT]账户余额不足 :%.4f\n",
-				//	TimeNow(), bot.Exchange.GetExchangeName(),bot.Name,currentAct)
+				//	TimeNow(), bot.Exchange.GetExchangeName(),bot.Name,currentUSDTAmount)
 				continue
 			}
 			Printf("[%s] [%s %s-USDT]第一次进入，直接尝试买入\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
 
 			var orderTmp *api.Order
-			currentOrder, cerr := BuyIn(bot.Amount, orderTmp, bot, exchangeCfg.RoiRate)
+			currentOrder, cerr := BuyIn(bot.LimitMoney, bot.LimitAmount, orderTmp, bot, exchangeCfg.RoiRate)
 			if cerr == nil {
 				Printf("[%s] [%s %s-USDT] 挂单（买）成功, 订单号：%s, %d\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID2, currentOrder.OrderID)
@@ -539,7 +545,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			}
 
 			//设置间隔，最大5*1800s （2.5小时），最少1800s（30分钟）
-			timer = (r.Intn(4) + 1) * 1800 + rand.Intn(100)
+			timer = exchangeCfg.BotTimeSpan * 60 + rand.Intn(100)
 			Printf("[%s] [%s %s-USDT] random time:%d\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, timer)
 		}
@@ -564,7 +570,7 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 		}
 		Printf("[%s] %s - [%s-USDT] 启动状态 \n", TimeNow(), exchange.GetExchangeName(), coin.Name)
 		pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
-		coinBot := Bot{0, exchangeCfg.BuyLimitMoney, 0.0,
+		coinBot := Bot{0, exchangeCfg.BuyLimitMoney, coin.LimitAmount,0.0,
 			0, oldTime, 0, exchangeCfg.RoiRate, 0,
 			pair, exchange, 1.0,
 			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now()} //初始化

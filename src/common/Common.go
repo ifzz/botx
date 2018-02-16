@@ -33,6 +33,7 @@ type SExchange struct {
 	Coins         SCoins  `xml:"coins"`
 	MaxBotNum     int     `xml:"maxBotNum"`
 	Mode     int 	`xml:"mode"`
+	BotTimeSpan int `xml:"botTimeSpan"`
 }
 type SCoins struct {
 	Coin []SCoin `xml:"coin"`
@@ -44,6 +45,7 @@ type SCoin struct {
 	Pair          string `xml:"pair"`
 	PriceDecimel  string `xml:"priceDecimel"`
 	AmountDecimel string `xml:"amountDecimel"`
+	LimitAmount float64 `xml:"limitAmount"`
 }
 
 func Core() string {
