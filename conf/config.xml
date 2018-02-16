@@ -13,6 +13,7 @@
             <timeoutBuyOrder>360</timeoutBuyOrder>
             <timeoutSellOrder>360</timeoutSellOrder>
             <mode>2</mode>
+            <botTimeSpan>10</botTimeSpan>
             <coins>
                 <coin>
                     <enable>0</enable>
@@ -20,6 +21,7 @@
                     <pair>BTC_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
                     <amountDecimel>%.4f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
                     <enable>0</enable>
@@ -27,6 +29,7 @@
                     <pair>ETH_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
                     <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
                     <enable>0</enable>
@@ -34,6 +37,7 @@
                     <pair>ETC_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
                     <amountDecimel>%.2f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
                     <enable>0</enable>
@@ -41,6 +45,7 @@
                     <pair>BCC_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
                     <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
                     <enable>0</enable>
@@ -48,6 +53,7 @@
                     <pair>HSR_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
                     <amountDecimel>%.2f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
                 </coin>
             </coins>
         </exchange>
@@ -61,6 +67,7 @@
             <maxBotNum>5</maxBotNum>
             <timeoutBuyOrder>360</timeoutBuyOrder>
             <timeoutSellOrder>360</timeoutSellOrder>
+            <mode>2</mode>
             <coins>
                 <coin>
                     <enable>0</enable>
@@ -68,6 +75,7 @@
                     <pair>BTC_USDT</pair>
                     <priceDecimel>%.4f</priceDecimel>
                     <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
                     <enable>0</enable>
@@ -75,6 +83,7 @@
                     <pair>ETH_USDT</pair>
                     <priceDecimel>%.4f</priceDecimel>
                     <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
                 </coin>
             </coins>
         </exchange>
