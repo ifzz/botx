@@ -45,6 +45,7 @@ type Bot struct {
 	StartTime time.Time //启动时间
 }
 
+//买入
 func BuyIn(amount float64, latestOrder *api.Order, bot *Bot, roiRateCfg float64) (*api.Order, error) {
 	retErr := errors.New(TimeNow() + "挂买单失败")
 
@@ -71,6 +72,8 @@ func BuyIn(amount float64, latestOrder *api.Order, bot *Bot, roiRateCfg float64)
 	}
 	return order, retErr
 }
+
+//计算可以买入的价格
 func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) float64  {
 	var price float64 = 0
 	ticker, err := exchange.GetTicker(pair)
@@ -127,6 +130,8 @@ func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) floa
 	return price
 
 }
+
+//计算可以卖出的价格
 func calcSellPrice(depth api.Depth, orignPrice float64, minPrice float64) float64  {
 
 	var price float64 = orignPrice
@@ -159,7 +164,7 @@ func calcSellPrice(depth api.Depth, orignPrice float64, minPrice float64) float6
 	return price
 }
 
-
+//卖出一个订单
 func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, mode int) (*api.Order, error) {
 
 	//以赚取coin为目标
@@ -192,7 +197,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 	if err == nil {
 		sellPrice = calcSellPrice(*depth, sellPrice, latestOrder.Price * roiCfgRate)
 	}
-	//2018/2/15 根据mode判断卖出价格
+	//2018/2/15 根据mode判断卖出价格，TODO，可能有float精度损失
 	strSellAmount := "0.0"
 	availableAmount := getAvailableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
 	if mode == MODE_COIN {
@@ -244,7 +249,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 
 }
 
-
+///取消订单
 func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
 	shouldCancel := false
@@ -290,8 +295,7 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
 }
 
-
-
+///程序启动一个bot
 func Start(bot *Bot, exchangeCfg SExchange) {
 
 	Printf("[%s] [%s %s-USDT] start a bot %d \n",
@@ -469,6 +473,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 }
 
+//计算roi
 func roiCalculate(bots [10000]Bot, cnt int) (bool, int) {
 	roiRate := 0.0
 	counter := 0
@@ -494,6 +499,8 @@ func roiCalculate(bots [10000]Bot, cnt int) (bool, int) {
 	}
 	return roiWell, counter
 }
+
+//启动bots
 func startBots(bot Bot, exchangeCfg SExchange) {
 	//bot start，启动策略
 	maxCnt := exchangeCfg.MaxBotNum
@@ -542,6 +549,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 
 }
 
+//启动一个交易平台
 func startExchange(exchange api.API, exchangeCfg SExchange) {
 
 	Printf("[%s] 启动%s bot\n", TimeNow(), exchange.GetExchangeName())
@@ -580,10 +588,12 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 
 }
 
+//交易所监测
 func exchangeObserve(exchange api.API, exchangeCfg SExchange) {
 	stratage.Start(exchange, exchangeCfg)
 }
 
+//获取可用的数字货币数量
 func getAvailableAmount(exchange api.API, currency *api.Currency) float64 {
 
 	acc, err := exchange.GetAccount()
@@ -603,9 +613,8 @@ func getAvailableAmount(exchange api.API, currency *api.Currency) float64 {
 	}
 	return amount
 }
-/*
-get Balance
-*/
+
+//获取账户总额
 func getBalance(exchange api.API, currency *api.Currency) string {
 	acc, err := exchange.GetAccount()
 	if err != nil {
@@ -656,6 +665,7 @@ func getBalance(exchange api.API, currency *api.Currency) string {
 
 }
 
+//程序退出
 func ExitFunc() {
 
 	systemExit = true
@@ -665,7 +675,7 @@ func ExitFunc() {
 	os.Exit(0)
 }
 
-
+//入口
 func main() {
 
 	configFile := flag.String("c", "../conf/config.xml", "load config file")
