@@ -45,10 +45,10 @@ type Bot struct {
 	StartTime time.Time //启动时间
 }
 
-func BuyIn(amount float64, latestOrder *api.Order, bot *Bot) (*api.Order, error) {
+func BuyIn(amount float64, latestOrder *api.Order, bot *Bot, roiRateCfg float64) (*api.Order, error) {
 	retErr := errors.New(TimeNow() + "挂买单失败")
 
-	buyPrice := calcBuyPrice(bot.Exchange, bot.CurrencyPair,bot.RoiRate)
+	buyPrice := calcBuyPrice(bot.Exchange, bot.CurrencyPair,roiRateCfg)
 	if buyPrice == 0 {
 		Printf("[%s] [%s %s-USDT] 获取买入价格失败\n",TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
 		return nil, retErr
@@ -116,7 +116,7 @@ func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) floa
 
 		if roiRate * base2BidPrice > base8AskPrice {
 			//根据现在的roiRate，卖出价格超出了平均卖方价格，考虑暂时不做买入操作
-			Printf("[%s] [%s USDT] calcBuy Price err 1 价格：%.4f / %.4f \n",
+			Printf("[%s] [%s USDT] calcBuy Price err 2 价格：%.4f / %.4f \n",
 				TimeNow(),exchange.GetExchangeName(),base2BidPrice,base8AskPrice)
 			price = 0
 			return price
@@ -196,9 +196,10 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 	strSellAmount := "0.0"
 	availableAmount := getAvailableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
 	if mode == MODE_COIN {
-		Printf("[%s] [%s %s-USDT] mode=coin\n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
+
 		sellAmount := latestOrder.Amount / (1 + roiRate)
+		Printf("[%s] [%s %s-USDT] mode=coin, last amount:%.4f, sell amount:%.4f\n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.Amount, sellAmount)
 		if availableAmount >= sellAmount {
 			strSellAmount = Sprintf(bot.AmountDecimel,sellAmount)
 		}else {
@@ -370,7 +371,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 				//Println(TimeNow() + "订单完成，如果是卖出订单，可以挂买单")
 
-				currentOrder, cerr := BuyIn(bot.Amount, latestOrder, bot)
+				currentOrder, cerr := BuyIn(bot.Amount, latestOrder, bot, exchangeCfg.RoiRate)
 				if cerr == nil {
 					Printf("[%s] [%s %s-USDT] 挂单（买）成功，订单号：%d\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID)
@@ -439,7 +440,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
 
 			var orderTmp *api.Order
-			currentOrder, cerr := BuyIn(bot.Amount, orderTmp, bot)
+			currentOrder, cerr := BuyIn(bot.Amount, orderTmp, bot, exchangeCfg.RoiRate)
 			if cerr == nil {
 				Printf("[%s] [%s %s-USDT] 挂单（买）成功, 订单号：%s, %d\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID2, currentOrder.OrderID)
