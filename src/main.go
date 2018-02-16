@@ -541,7 +541,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			//设置间隔，最大5*1800s （2.5小时），最少1800s（30分钟）
 			timer = (r.Intn(4) + 1) * 1800 + rand.Intn(100)
 			Printf("[%s] [%s %s-USDT] random time:%d\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), timer)
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, timer)
 		}
 		timer--
 
