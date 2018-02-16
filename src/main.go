@@ -533,17 +533,19 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 				currCnt++
 			}
 
-			if counter > 0 && time.Now().Minute()%10 == 0 { //10分钟打印一次
+			if counter > 0 && time.Now().Minute() % 10 == 0 { //10分钟打印一次
 				Printf("[%s] [%s %s-USDT] 累积成交对：%d\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, counter)
 			}
 
-			//设置间隔，10分钟
-			timer = int(time.Duration(10*time.Minute + time.Duration(r.Intn(1000000))))
+			//设置间隔，最大5*1800s （2.5小时），最少1800s（30分钟）
+			timer = (r.Intn(4) + 1) * 1800 + rand.Intn(100)
+			Printf("[%s] [%s %s-USDT] random time:%d\n",
+				TimeNow(), bot.Exchange.GetExchangeName(), timer)
 		}
 		timer--
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Second)
 
 	}
 
