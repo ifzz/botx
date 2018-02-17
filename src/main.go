@@ -73,8 +73,12 @@ func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiR
 		return order, nil
 
 	} else {
-		Printf("[%s] [%s %s-USDT] 挂买入单 err:%s, 价格：%s /%s \n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error(), strBuyPrice, strbuyAmount)
+		if err.Error() != "2009" { //2009 余额不足
+			Printf("[%s] [%s %s-USDT] 挂买入单 err:%s, 价格：%s /%s \n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error(), strBuyPrice, strbuyAmount)
+		}
+
+		return order, err
 	}
 	return order, retErr
 }
@@ -319,7 +323,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 	for systemExit == false {
 
-		time.Sleep(time.Second)
+		time.Sleep(5 * time.Second)
+
 		acct, err := bot.Exchange.GetAccount()
 		if err != nil {
 			msg:=err.Error()
@@ -463,8 +468,10 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				counterBuyinMoney += currentOrder.Price * currentOrder.Amount
 
 			} else {
-				Printf("[%s] [%s %s-USDT] 第一次进入，买入失败\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
+				if cerr.Error() != "2009" { //2009 余额不足
+					Printf("[%s] [%s %s-USDT] 第一次进入，买入失败\n",
+						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
+				}
 			}
 		}
 
@@ -526,9 +533,11 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 	for systemExit == false {
 
 		//满足一定条件，启动一个新的bot
+		var counter int = 0
+		var roiWell bool = false
 		if timer <= 0 {
 			//计算收益率情况, roi
-			roiWell, counter := roiCalculate(bots, currBotID)
+			roiWell, counter = roiCalculate(bots, currBotID)
 
 			//只要有收益，就可以启动新的bot
 			if roiWell == true && maxCnt > currCnt {
@@ -539,10 +548,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 				currCnt++
 			}
 
-			if counter > 0 && time.Now().Minute() % 10 == 0 { //10分钟打印一次
-				Printf("[%s] [%s %s-USDT] 累积成交对：%d\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, counter)
-			}
+
 
 			//设置间隔，最大5*1800s （2.5小时），最少1800s（30分钟）
 			timer = exchangeCfg.BotTimeSpan * 60 + r.Intn(100)
@@ -550,7 +556,10 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, timer)
 		}
 		timer--
-
+		if counter > 0  && time.Now().Minute() % 10 == 0 {//10 min
+			Printf("[%s] [%s %s-USDT] 累积成交对：%d\n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, counter)
+		}
 		time.Sleep(time.Second)
 
 	}

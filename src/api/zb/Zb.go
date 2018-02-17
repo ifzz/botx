@@ -197,7 +197,7 @@ func (zb *Zb) placeOrder(amount, price string, currency CurrencyPair, tradeType 
 
 	code := respmap["code"].(float64)
 	if code != 1000 {
-		log.Println(string(resp))
+		//log.Println(string(resp))
 		return nil, errors.New(fmt.Sprintf("%.0f", code))
 	}
 
@@ -263,6 +263,20 @@ func (zb *Zb) CancelOrder(orderId string, currency CurrencyPair) (bool, error) {
 func parseOrder(order *Order, ordermap map[string]interface{}) {
 	//log.Println(ordermap)
 	//order.Currency = currency;
+	if  ordermap == nil ||
+		ordermap["id"] == nil ||
+		ordermap["total_amount"] == nil ||
+		ordermap["trade_amount"] == nil ||
+		ordermap["price"] == nil ||
+		ordermap["trade_money"] == nil ||
+		ordermap["trade_date"] == nil ||
+		ordermap["type"] == nil ||
+		ordermap["status"] == nil {
+
+		log.Println(ordermap)
+		order = nil
+		return
+	}
 	order.OrderID, _ = strconv.Atoi(ordermap["id"].(string))
 	order.OrderID2 = ordermap["id"].(string)
 	order.Amount = ordermap["total_amount"].(float64)
