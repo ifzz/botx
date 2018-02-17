@@ -28,9 +28,9 @@ type Bot struct {
 	LimitMoney       float64       //当前账户使用金额
 	LimitAmount 	float64 	//limit buy in amount, if it's 0, LimitMoney will be used
 	Price        float64          //当前价格
-	Type         int              //类型：0，1分别代表买入，卖出
+	Type         int              //类型: 0，1分别代表买入，卖出
 	Timestamp    time.Time        //当前时间
-	Status       int              //当前状态：0，1，2分别代表
+	Status       int              //当前状态:0，1，2分别代表
 	RoiRate      float64          //收益率
 	Counter      int              //完成个数
 	CurrencyPair api.CurrencyPair //
@@ -68,13 +68,13 @@ func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiR
 
 	order, err := bot.Exchange.LimitBuy(strbuyAmount, strBuyPrice, bot.CurrencyPair)
 	if nil == err {
-		Printf("[%s] [%s %s-USDT] 挂买入单 ok : %d, 价格：%s /%s \n",
+		Printf("[%s] [%s %s-USDT] 挂买入单 ok : %d, 价格:%s /%s \n",
 			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, order.OrderID, strBuyPrice, strbuyAmount)
 		return order, nil
 
 	} else {
 		if err.Error() != "2009" { //2009 余额不足
-			Printf("[%s] [%s %s-USDT] 挂买入单 err:%s, 价格：%s /%s \n",
+			Printf("[%s] [%s %s-USDT] 挂买入单 err:%s, 价格:%s /%s \n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error(), strBuyPrice, strbuyAmount)
 		}
 
@@ -118,7 +118,7 @@ func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) floa
 
 		if roiRate * price > avAskPrice {
 			//根据现在的roiRate，卖出价格超出了平均卖方价格，考虑暂时不做买入操作
-			Printf("[%s] [%s USDT] calcBuy Price err 1 价格：%.4f / %.4f \n",
+			Printf("[%s] [%s USDT] calcBuy Price err 1 价格:%.4f / %.4f \n",
 				TimeNow(),exchange.GetExchangeName(),price,avAskPrice)
 			price = 0
 			return price
@@ -129,7 +129,7 @@ func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) floa
 
 		if roiRate * base2BidPrice > base8AskPrice {
 			//根据现在的roiRate，卖出价格超出了平均卖方价格，考虑暂时不做买入操作
-			Printf("[%s] [%s USDT] calcBuy Price err 2 价格：%.4f / %.4f \n",
+			Printf("[%s] [%s USDT] calcBuy Price err 2 价格:%.4f / %.4f \n",
 				TimeNow(),exchange.GetExchangeName(),base2BidPrice,base8AskPrice)
 			price = 0
 			return price
@@ -167,7 +167,7 @@ func calcSellPrice(depth api.Depth, orignPrice float64, minPrice float64) float6
 
 	base10Price := depth.AskList[9].Price
 	if orignPrice > avAskPrice || orignPrice > base10Price {
-		//如果当前设定的价格过高：高于平均卖单价格，或者高于第10层的价格，调低价格
+		//如果当前设定的价格过高: 高于平均卖单价格，或者高于第10层的价格，调低价格
 		tmp := math.Min(avAskPrice, base10Price)
 		price = math.Max(minPrice, tmp)
 	}
@@ -218,7 +218,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 		if availableAmount >= sellAmount {
 			strSellAmount = Sprintf(bot.AmountDecimel,sellAmount)
 		}else {
-			Printf("[%s] [%s %s-USDT] mode=coin 可用coin不足,且无法满足收益，当前可用：%.4f, 需要：%.4f \n",
+			Printf("[%s] [%s %s-USDT] mode=coin 可用coin不足,且无法满足收益，当前可用:%.4f, 需要:%.4f \n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, availableAmount, sellAmount)
 			return nil, errors.New("可用coin不足，且无法满足收益")
 		}
@@ -236,7 +236,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 			strSellAmount = Sprintf(bot.AmountDecimel, availableAmount)
 
 		}else {//如果 coin不足，且收益无法保障
-			Printf("[%s] [%s %s-USDT] mode=money 可用coin不足,且无法满足收益，当前可用：%.4f, 需要：%.4f \n",
+			Printf("[%s] [%s %s-USDT] mode=money 可用coin不足,且无法满足收益，当前可用:%.4f, 需要:%.4f \n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, availableAmount, latestOrder.Amount)
 			return nil, errors.New("可用coin不足，且无法满足收益")
 		}
@@ -251,7 +251,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 		//put sell order
 		return order, nil
 	} else {
-		Printf("[%s] [%s %s-USDT] 挂卖出单err:%s, 价格：%s /%s \n",
+		Printf("[%s] [%s %s-USDT] 挂卖出单err:%s, 价格:%s /%s \n",
 			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error(), strSellPrice, strSellAmount)
 	}
 	return order, retErr
@@ -288,7 +288,7 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
 	if (ticker.Buy / bot.Price) > 0.02 || idxDepth > 5 {
 		//超过2%，或者买入深度已经埋没到超过5层，可以取消订单
-		Printf("[%s] [%s %s-USDT] 取消订单，买入价格：%.4f, 现价: %.4f\n",
+		Printf("[%s] [%s %s-USDT] 取消订单，买入价格:%.4f, 现价: %.4f\n",
 			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.Price, ticker.Buy)
 		shouldCancel = true
 		_, err := bot.Exchange.CancelOrder(orderID, bot.CurrencyPair)
@@ -331,7 +331,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 			if len(msg) > 100 {
 				msg = msg[0:100]
 			}
-			Printf("[%s] [%s %s-USDT] bot :%d 获取账户出错，继续， 信息：%s\n",
+			Printf("[%s] [%s %s-USDT] bot :%d 获取账户出错，继续， 信息:%s\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, msg)
 			continue
 		}
@@ -342,7 +342,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 		if orderID != "" {
 			latestOrder, err := bot.Exchange.GetOneOrder(orderID, bot.CurrencyPair)
 			if err != nil || latestOrder == nil {
-				Printf("[%s] [%s %s-USDT] 读取订单(%s)状态失败：%s\n",
+				Printf("[%s] [%s %s-USDT] 读取订单(%s)状态失败:%s\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID, err.Error())
 				continue
 			}
@@ -354,13 +354,13 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 			if latestOrder.Status == api.ORDER_FINISH && latestOrder.Side == api.BUY {
 				//订单完成，如果是买入订单，则可以挂卖单
-				Printf("[%s] [%s %s-USDT] 交易（买入）成功，订单号：%d\n",
+				Printf("[%s] [%s %s-USDT] 交易（买入）成功，订单号:%d\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.OrderID)
 
 				//Println(TimeNow() + "订单完成，如果是买入订单，则可以挂卖单")
 				currentOrder, cerr := SellOut(latestOrder, bot, speed, exchangeCfg.RoiRate, exchangeCfg.Mode)
 				if cerr == nil {
-					Printf("[%s] [%s %s-USDT] 挂单（卖）订单号： %d\n",
+					Printf("[%s] [%s %s-USDT] 挂单（卖）订单号:%d\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID)
 					orderID = currentOrder.OrderID2 //Sprintf("%d", currentOrder.OrderID) //保存最新ID
 
@@ -377,7 +377,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 				//订单完成，如果是卖出订单，可以挂买单
 
-				Printf("[%s] [%s %s-USDT] 交易（卖出）成功，订单号：%d\n",
+				Printf("[%s] [%s %s-USDT] 交易（卖出）成功，订单号:%d\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.OrderID)
 
 				//speed 挂卖出单，到卖出单交易成功的时间间隔
@@ -395,7 +395,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 				currentOrder, cerr := BuyIn(bot.LimitMoney, bot.LimitAmount, latestOrder, bot, exchangeCfg.RoiRate)
 				if cerr == nil {
-					Printf("[%s] [%s %s-USDT] 挂单（买）成功，订单号：%d\n",
+					Printf("[%s] [%s %s-USDT] 挂单（买）成功，订单号:%d\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID)
 					orderID = currentOrder.OrderID2 //Sprintf("%d", currentOrder.OrderID) //保存最新ID
 
@@ -414,7 +414,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 			} else if latestOrder.Status == api.ORDER_CANCEL {
 				//取消订单了
-				Printf("[%s] [%s %s-USDT] 订单号：%s 被取消 \n",
+				Printf("[%s] [%s %s-USDT] 订单号:%s 被取消 \n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
 				orderID = ""
 
@@ -464,8 +464,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 			var orderTmp *api.Order
 			currentOrder, cerr := BuyIn(bot.LimitMoney, bot.LimitAmount, orderTmp, bot, exchangeCfg.RoiRate)
 			if cerr == nil {
-				Printf("[%s] [%s %s-USDT] 挂单（买）成功, 订单号：%s, %d\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID2, currentOrder.OrderID)
+				Printf("[%s] [%s %s-USDT] 挂单（买）成功, 订单号:%s\n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID2)
 				orderID = currentOrder.OrderID2 //Sprintf("%d", currentOrder.OrderID) //保存最新ID
 
 				//完成时间
@@ -563,7 +563,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 		}
 		timer--
 		if counter > 0  && time.Now().Minute() % 10 == 0 {//10 min
-			Printf("[%s] [%s %s-USDT] 累积成交对：%d\n",
+			Printf("[%s] [%s %s-USDT] 累积成交对:%d\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, counter)
 		}
 		time.Sleep(time.Second)
@@ -600,7 +600,7 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 			balanceNow := getBalance(exchange, nil)
 			rate := (api.ToFloat64(balanceNow) - api.ToFloat64(balanceBegin)) / api.ToFloat64(balanceBegin)
 			rate = rate * 100
-			Printf("[%s] [%s-USDT] 开始余额：%s, 当前余额: %s，整体累积收益率：%.4f %%\n",
+			Printf("[%s] [%s-USDT] 开始余额:%s, 当前余额: %s，整体累积收益率:%.4f %%\n",
 				TimeNow(), exchange.GetExchangeName(), balanceBegin, balanceNow, rate)
 
 		}
