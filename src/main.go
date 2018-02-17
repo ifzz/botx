@@ -354,6 +354,9 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 			if latestOrder.Status == api.ORDER_FINISH && latestOrder.Side == api.BUY {
 				//订单完成，如果是买入订单，则可以挂卖单
+				Printf("[%s] [%s %s-USDT] 交易（买入）成功，订单号：%d\n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.OrderID)
+
 				//Println(TimeNow() + "订单完成，如果是买入订单，则可以挂卖单")
 				currentOrder, cerr := SellOut(latestOrder, bot, speed, exchangeCfg.RoiRate, exchangeCfg.Mode)
 				if cerr == nil {
@@ -372,7 +375,11 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 			} else if latestOrder.Status == api.ORDER_FINISH && latestOrder.Side == api.SELL {
 
-				//订单完成，如果是卖出订单，可以挂买单,
+				//订单完成，如果是卖出订单，可以挂买单
+
+				Printf("[%s] [%s %s-USDT] 交易（卖出）成功，订单号：%d\n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.OrderID)
+
 				//speed 挂卖出单，到卖出单交易成功的时间间隔
 				speed = time.Now().Unix() - bot.Timestamp.Unix()
 
@@ -548,7 +555,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 				currCnt++
 				currBotID++
 			}
-			
+
 			//设置间隔，最大5*1800s （2.5小时），最少1800s（30分钟）
 			timer = exchangeCfg.BotTimeSpan * 60 + r.Intn(100)
 			Printf("[%s] [%s %s-USDT] random time:%d\n",
