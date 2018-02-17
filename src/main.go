@@ -320,7 +320,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	var counterSellout int64 = 0
 	var counterBuyinMoney float64 = 0
 	var counterSelloutMoney float64 = 0
-
+	orderMap := make(map[string]string) //记录所有成交对
 	for systemExit == false {
 
 		time.Sleep(5 * time.Second)
@@ -360,8 +360,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				//Println(TimeNow() + "订单完成，如果是买入订单，则可以挂卖单")
 				currentOrder, cerr := SellOut(latestOrder, bot, speed, exchangeCfg.RoiRate, exchangeCfg.Mode)
 				if cerr == nil {
-					Printf("[%s] [%s %s-USDT] 挂单（卖）订单号:%d\n",
-						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID)
+					Printf("[%s] [%s %s-USDT] 挂单（卖）订单号:%d, 对应买入订单号:%d\n",
+						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID, latestOrder.OrderID)
 					orderID = currentOrder.OrderID2 //Sprintf("%d", currentOrder.OrderID) //保存最新ID
 
 					//完成时间
@@ -369,6 +369,9 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 					counterSellout++
 					counterSelloutMoney += currentOrder.Price * currentOrder.Amount
+
+					orderMap[latestOrder.OrderID2] = currentOrder.OrderID2
+
 					//TODO TEST 交易完成一次，则退出
 					//break
 				}
