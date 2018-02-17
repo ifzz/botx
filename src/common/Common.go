@@ -28,12 +28,12 @@ type SExchange struct {
 	SecretKey     string  `xml:"secretKey"`
 	RoiRate       float64 `xml:"roiRate"`
 	BuyLimitMoney float64 `xml:"buyLimitMoney"`
-	TimeoutBuyOrder int `xml:"timeoutBuyOrder"`
-	TimeoutSellOrder int `xml:"timeoutSellOrder"`
+	TimeoutBuyOrder int `xml:"timeoutBuyOrder"` //second
+	TimeoutSellOrder int `xml:"timeoutSellOrder"` //second
 	Coins         SCoins  `xml:"coins"`
 	MaxBotNum     int     `xml:"maxBotNum"`
 	Mode     int 	`xml:"mode"`
-	BotTimeSpan int `xml:"botTimeSpan"`
+	BotTimeSpan int `xml:"botTimeSpan"` //second
 }
 type SCoins struct {
 	Coin []SCoin `xml:"coin"`
