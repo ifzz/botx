@@ -22,7 +22,11 @@ import (
 
 var systemExit bool = false
 
-
+type OrderInfo struct {
+	Price float64
+	Amount float64
+	Status int //0-finished,1-waiting,2-cancel
+}
 type Bot struct {
 	ID           int              // BotID
 	LimitMoney       float64       //当前账户使用金额
@@ -44,6 +48,9 @@ type Bot struct {
 
 	Name      string
 	StartTime time.Time //启动时间
+
+	OrderList map[int] OrderInfo //key is id
+	OrderPair map[int] int //id,id
 }
 
 //买入
@@ -320,7 +327,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	var counterSellout int64 = 0
 	var counterBuyinMoney float64 = 0
 	var counterSelloutMoney float64 = 0
-	orderMap := make(map[string]string) //记录所有成交对
+	//orderMap := make(map[string]string) //记录所有成交对
 	for systemExit == false {
 
 		time.Sleep(5 * time.Second)
@@ -354,6 +361,13 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 			if latestOrder.Status == api.ORDER_FINISH && latestOrder.Side == api.BUY {
 				//订单完成，如果是买入订单，则可以挂卖单
+				//set status to finish
+				item, exist:= bot.OrderList[latestOrder.OrderID]
+				if exist == true {
+					item.Status = 0
+					bot.OrderList[latestOrder.OrderID] = item //modiy
+				}
+
 				Printf("[%s] [%s %s-USDT] 交易（买入）成功，订单号:%d\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.OrderID)
 
@@ -375,7 +389,11 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					counterSellout++
 					counterSelloutMoney += currentOrder.Price * currentOrder.Amount
 
-					orderMap[latestOrder.OrderID2] = currentOrder.OrderID2
+					//orderMap[latestOrder.OrderID2] = currentOrder.OrderID2
+					bot.OrderPair[latestOrder.OrderID] = currentOrder.OrderID
+
+					orderInfo := OrderInfo{currentOrder.Price, currentOrder.Amount,1}
+					bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
 
 					//TODO TEST 交易完成一次，则退出
 					//break
@@ -384,6 +402,12 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 			} else if latestOrder.Status == api.ORDER_FINISH && latestOrder.Side == api.SELL {
 
 				//订单完成，如果是卖出订单，可以挂买单
+				//set status to finish
+				item, exist:= bot.OrderList[latestOrder.OrderID]
+				if exist == true {
+					item.Status = 0
+					bot.OrderList[latestOrder.OrderID] = item //modiy
+				}
 
 				Printf("[%s] [%s %s-USDT] 交易（卖出）成功，订单号:%d\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.OrderID)
@@ -418,6 +442,9 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 					counterBuyin++
 					counterBuyinMoney += currentOrder.Price * currentOrder.Amount
+
+					orderInfo := OrderInfo{currentOrder.Price, currentOrder.Amount,1}
+					bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
 				}
 
 			} else if latestOrder.Status == api.ORDER_CANCEL {
@@ -433,6 +460,14 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					counterBuyin--
 					counterBuyinMoney -= latestOrder.Price * latestOrder.Amount
 				}
+
+				//set status to cancel
+				item, exist:= bot.OrderList[latestOrder.OrderID]
+				if exist == true {
+					item.Status = 2
+					bot.OrderList[latestOrder.OrderID] = item //modiy
+				}
+
 			} else {//订单未完成状态
 
 				//如果长时间(1小时)未成交，且为买入单，尝试取消订单
@@ -446,6 +481,13 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 						Printf("[%s] [%s %s-USDT] 因长时间未买入成功，取消订单:%s 成功\n",
 							TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
 						orderID = ""
+						//set status to cancel
+						item, exist:= bot.OrderList[latestOrder.OrderID]
+						if exist == true {
+							item.Status = 2
+							bot.OrderList[latestOrder.OrderID] = item //modiy
+						}
+
 					}
 				}else if latestOrder.Side == api.SELL &&
 					int(time.Now().Unix()-bot.Timestamp.Unix()) > exchangeCfg.TimeoutSellOrder {
@@ -482,6 +524,9 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				counterBuyin++
 				counterBuyinMoney += currentOrder.Price * currentOrder.Amount
 
+				orderInfo := OrderInfo{currentOrder.Price, currentOrder.Amount,1}
+				bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
+
 			} else {
 				if cerr.Error() != "2009" { //2009 余额不足
 					Printf("[%s] [%s %s-USDT] 第一次进入，买入失败\n",
@@ -502,9 +547,9 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 }
 
 //计算roi
-func roiCalculate(bots [10000]Bot, cnt int) (bool, int) {
+func roiCalculate(bots [10000]Bot, cnt int) (bool) {
 	roiRate := 0.0
-	counter := 0
+
 	roiWell := true //加速度，确定等待时间，是否有收益，决定是否可以启动新的bot
 
 	//很长时间未成交，可以新增
@@ -513,7 +558,6 @@ func roiCalculate(bots [10000]Bot, cnt int) (bool, int) {
 	var timeSpan int64 = 0
 	for i := 0; i < cnt; i++ {
 		roiRate += bots[i].RoiRate
-		counter += bots[i].Counter
 		timeSpan += (time.Now().Unix() - bots[i].Timestamp.Unix())
 
 	}
@@ -525,7 +569,7 @@ func roiCalculate(bots [10000]Bot, cnt int) (bool, int) {
 			roiWell = true
 		}
 	}
-	return roiWell, counter
+	return roiWell
 }
 
 //启动bots
@@ -548,17 +592,18 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 	for systemExit == false {
 
 		//满足一定条件，启动一个新的bot
-		var counter int = 0
 		var roiWell bool = false
 		if timer <= 0 {
-			//计算收益率情况, roi
-			roiWell, counter = roiCalculate(bots, currBotID)
+			//计算收益率情况, roi, TODO roi calculate
+			roiWell = true //roiCalculate(bots, currBotID)
 
 			//只要有收益，就可以启动新的bot
 			if roiWell == true && maxCnt > currCnt {
 				bots[currBotID] = bot                  //初始化
 				bots[currBotID].ID = currBotID + 1     //修改ID
 				bots[currBotID].StartTime = time.Now() //启动时间
+				bots[currBotID].OrderList = make(map[int] OrderInfo)
+				bots[currBotID].OrderPair = make(map[int] int)
 				go Start(&bots[currBotID], exchangeCfg)
 				currCnt++
 				currBotID++
@@ -570,9 +615,27 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, timer)
 		}
 		timer--
-		if counter > 0  && time.Now().Minute() % 10 == 0 {//10 min
-			Printf("[%s] [%s %s-USDT] 累积成交对:%d\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, counter)
+		if time.Now().Minute() % 10 == 0 {//10 min print info
+			pairCounter:=0
+			waitingOrder:=0
+			finishedOrder:=0
+			cancelOrder:=0
+			for i:=0;i<currCnt;i++ {
+				pairCounter += len(bots[i].OrderPair)
+				for _,v:= range bots[i].OrderList {
+					switch v.Status {
+					case 0:
+						finishedOrder++
+					case 1:
+						waitingOrder++
+					case 2:
+						cancelOrder++
+					}
+				}
+			}
+			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d)\n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, pairCounter,waitingOrder, finishedOrder,cancelOrder)
+
 		}
 		time.Sleep(time.Second)
 
@@ -596,7 +659,8 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 		coinBot := Bot{0, exchangeCfg.BuyLimitMoney, coin.LimitAmount,0.0,
 			0, oldTime, 0, exchangeCfg.RoiRate, 0,
 			pair, exchange, 1.0,
-			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now()} //初始化
+			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now(),
+			nil, nil} //初始化
 		go startBots(coinBot, exchangeCfg)
 		time.Sleep(time.Second)
 	}
