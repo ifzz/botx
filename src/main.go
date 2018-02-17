@@ -59,7 +59,8 @@ func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiR
 
 	buyPrice := calcBuyPrice(bot.Exchange, bot.CurrencyPair,roiRateCfg)
 	if buyPrice == 0 {
-		Printf("[%s] [%s %s-USDT] 获取买入价格失败\n",TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
+		Printf("[%s] [%s %s-USDT-bot %d] 获取买入价格失败\n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 		return nil, retErr
 	}
 
@@ -75,14 +76,14 @@ func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiR
 
 	order, err := bot.Exchange.LimitBuy(strbuyAmount, strBuyPrice, bot.CurrencyPair)
 	if nil == err {
-		Printf("[%s] [%s %s-USDT] 挂买入单 ok : %d, 价格:%s /%s \n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, order.OrderID, strBuyPrice, strbuyAmount)
+		Printf("[%s] [%s %s-USDT-bot %d] 挂买入单 ok : %d, 价格:%s /%s \n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,bot.ID, order.OrderID, strBuyPrice, strbuyAmount)
 		return order, nil
 
 	} else {
 		if err.Error() != "2009" { //2009 余额不足
-			Printf("[%s] [%s %s-USDT] 挂买入单 err:%s, 价格:%s /%s \n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error(), strBuyPrice, strbuyAmount)
+			Printf("[%s] [%s %s-USDT-bot %d] 挂买入单 err:%s, 价格:%s /%s \n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, err.Error(), strBuyPrice, strbuyAmount)
 		}
 
 		return order, err
@@ -220,19 +221,19 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 	if mode == MODE_COIN {
 
 		sellAmount := latestOrder.Amount / (1 + roiRate)
-		Printf("[%s] [%s %s-USDT] mode=coin, last amount:%.4f, sell amount:%.4f\n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.Amount, sellAmount)
+		Printf("[%s] [%s %s-USDT-bot %d] mode=coin, last amount:%.4f, sell amount:%.4f\n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, latestOrder.Amount, sellAmount)
 		if availableAmount >= sellAmount {
 			strSellAmount = Sprintf(bot.AmountDecimel,sellAmount)
 		}else {
-			Printf("[%s] [%s %s-USDT] mode=coin 可用coin不足,且无法满足收益，当前可用:%.4f, 需要:%.4f \n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, availableAmount, sellAmount)
+			Printf("[%s] [%s %s-USDT-bot %d] mode=coin 可用coin不足,且无法满足收益，当前可用:%.4f, 需要:%.4f \n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, availableAmount, sellAmount)
 			return nil, errors.New("可用coin不足，且无法满足收益")
 		}
 
 	}else {
-		Printf("[%s] [%s %s-USDT] mode=money\n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
+		Printf("[%s] [%s %s-USDT-bot %d] mode=money\n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 		if availableAmount >= latestOrder.Amount {//可用量足够
 
 			strSellAmount = Sprintf(bot.AmountDecimel, latestOrder.Amount)//默认使用卖出量
@@ -243,8 +244,8 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 			strSellAmount = Sprintf(bot.AmountDecimel, availableAmount)
 
 		}else {//如果 coin不足，且收益无法保障
-			Printf("[%s] [%s %s-USDT] mode=money 可用coin不足,且无法满足收益，当前可用:%.4f, 需要:%.4f \n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, availableAmount, latestOrder.Amount)
+			Printf("[%s] [%s %s-USDT-bot %d] mode=money 可用coin不足,且无法满足收益，当前可用:%.4f, 需要:%.4f \n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, availableAmount, latestOrder.Amount)
 			return nil, errors.New("可用coin不足，且无法满足收益")
 		}
 	}
@@ -253,13 +254,13 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 
 	order, err := bot.Exchange.LimitSell(strSellAmount, strSellPrice, bot.CurrencyPair)
 	if nil == err {
-		Printf("[%s] [%s %s-USDT] 挂卖出单 ok : %d，价格:%s / %s \n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, order.OrderID, strSellPrice, strSellAmount)
+		Printf("[%s] [%s %s-USDT-bot %d] 挂卖出单 ok : %d，价格:%s / %s \n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, order.OrderID, strSellPrice, strSellAmount)
 		//put sell order
 		return order, nil
 	} else {
-		Printf("[%s] [%s %s-USDT] 挂卖出单err:%s, 价格:%s /%s \n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error(), strSellPrice, strSellAmount)
+		Printf("[%s] [%s %s-USDT-bot %d] 挂卖出单err:%s, 价格:%s /%s \n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,bot.ID,  err.Error(), strSellPrice, strSellAmount)
 	}
 	return order, retErr
 
@@ -275,8 +276,8 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
 	ticker, err := bot.Exchange.GetTicker(bot.CurrencyPair)
 	if err != nil {
-		Printf("[%s] [%s %s-USDT] 获取Ticker出错，message: %s\n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error())
+		Printf("[%s] [%s %s-USDT-bot %d] 获取Ticker出错，message: %s\n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,bot.ID, err.Error())
 		return shouldCancel, retErr
 	}
 
@@ -295,16 +296,16 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
 	if (ticker.Buy / bot.Price) > 0.02 || idxDepth > 5 {
 		//超过2%，或者买入深度已经埋没到超过5层，可以取消订单
-		Printf("[%s] [%s %s-USDT] 取消订单，买入价格:%.4f, 现价: %.4f\n",
-			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.Price, ticker.Buy)
+		Printf("[%s] [%s %s-USDT-bot %d] 取消订单，买入价格:%.4f, 现价: %.4f\n",
+			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, bot.Price, ticker.Buy)
 		shouldCancel = true
 		_, err := bot.Exchange.CancelOrder(orderID, bot.CurrencyPair)
 		if nil == err {
 			//成功
 			return shouldCancel, nil
 		} else {
-			Printf("[%s] [%s %s-USDT] 取消订单失败, err:%s\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, err.Error())
+			Printf("[%s] [%s %s-USDT-bot %d] 取消订单失败, err:%s\n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, err.Error())
 		}
 	}
 
@@ -315,7 +316,7 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 ///程序启动一个bot
 func Start(bot *Bot, exchangeCfg SExchange) {
 
-	Printf("[%s] [%s %s-USDT] start a bot %d \n",
+	Printf("[%s] [%s %s-USDT-bot %d] start a new bot \n",
 		TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 
 	var orderID string = ""
@@ -338,7 +339,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 			if len(msg) > 100 {
 				msg = msg[0:100]
 			}
-			Printf("[%s] [%s %s-USDT] bot :%d 获取账户出错，继续， 信息:%s\n",
+			Printf("[%s] [%s %s-USDT-bot %d] 获取账户出错，继续， 信息:%s\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, msg)
 			continue
 		}
@@ -349,8 +350,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 		if orderID != "" {
 			latestOrder, err := bot.Exchange.GetOneOrder(orderID, bot.CurrencyPair)
 			if err != nil || latestOrder == nil {
-				Printf("[%s] [%s %s-USDT] 读取订单(%s)状态失败:%s\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID, err.Error())
+				Printf("[%s] [%s %s-USDT-bot %d] 读取订单(%s)状态失败:%s\n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,bot.ID, orderID, err.Error())
 				continue
 			}
 			/******DUEBUG**
@@ -368,14 +369,14 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					bot.OrderList[latestOrder.OrderID] = item //modiy
 				}
 
-				Printf("[%s] [%s %s-USDT] 交易（买入）成功，订单号:%d\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.OrderID)
+				Printf("[%s] [%s %s-USDT-bot %d] 交易（买入）成功，订单号:%d\n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, latestOrder.OrderID)
 
 				//Println(TimeNow() + "订单完成，如果是买入订单，则可以挂卖单")
 				currentOrder, cerr := SellOut(latestOrder, bot, speed, exchangeCfg.RoiRate, exchangeCfg.Mode)
 				if cerr == nil {
-					Printf("[%s] [%s %s-USDT] couple (buy-sell),orderid:(%d-%d), price:(%.4f,%.4f), amount:(%.4f,%.4f), rate:%.4f\n",
-						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,
+					Printf("[%s] [%s %s-USDT-bot %d] couple (buy-sell),orderid:(%d-%d), price:(%.4f,%.4f), amount:(%.4f,%.4f), rate:%.4f\n",
+						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID,
 							latestOrder.OrderID, currentOrder.OrderID,
 						latestOrder.Price, currentOrder.Price,
 							latestOrder.Amount, currentOrder.Amount,
@@ -409,8 +410,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					bot.OrderList[latestOrder.OrderID] = item //modiy
 				}
 
-				Printf("[%s] [%s %s-USDT] 交易（卖出）成功，订单号:%d\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, latestOrder.OrderID)
+				Printf("[%s] [%s %s-USDT-bot %d] 交易（卖出）成功，订单号:%d\n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, latestOrder.OrderID)
 
 				//speed 挂卖出单，到卖出单交易成功的时间间隔
 				speed = time.Now().Unix() - bot.Timestamp.Unix()
@@ -427,8 +428,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 				currentOrder, cerr := BuyIn(bot.LimitMoney, bot.LimitAmount, latestOrder, bot, exchangeCfg.RoiRate)
 				if cerr == nil {
-					Printf("[%s] [%s %s-USDT] 挂单（买）成功，订单号:%d\n",
-						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID)
+					Printf("[%s] [%s %s-USDT-bot %d] 挂单（买）成功，订单号:%d\n",
+						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, currentOrder.OrderID)
 					orderID = currentOrder.OrderID2 //Sprintf("%d", currentOrder.OrderID) //保存最新ID
 
 					//统计当前收益率
@@ -449,8 +450,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 			} else if latestOrder.Status == api.ORDER_CANCEL {
 				//取消订单了
-				Printf("[%s] [%s %s-USDT] 订单号:%s 被取消 \n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
+				Printf("[%s] [%s %s-USDT-bot %d] 订单号:%s 被取消 \n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, orderID)
 				orderID = ""
 
 				if latestOrder.Side == api.SELL {
@@ -478,8 +479,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					shouldCancel, cerr := tryCancelOrder(latestOrder, bot)
 					if cerr == nil && shouldCancel == true {
 						//需要取消订单，且已经成功
-						Printf("[%s] [%s %s-USDT] 因长时间未买入成功，取消订单:%s 成功\n",
-							TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
+						Printf("[%s] [%s %s-USDT-bot %d] 因长时间未买入成功，取消订单:%s 成功\n",
+							TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,bot.ID, orderID)
 						orderID = ""
 						//set status to cancel
 						item, exist:= bot.OrderList[latestOrder.OrderID]
@@ -494,8 +495,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					//如果是卖出单，但是长时间未成交，直接忽略该订单
 					//一直未卖出成功
 					//不取消订单，直接置未空
-					Printf("[%s] [%s %s-USDT] 订单:%s 长时间未卖出成功，跳出继续买入\n",
-						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, orderID)
+					Printf("[%s] [%s %s-USDT-bot %d] 订单:%s 长时间未卖出成功，跳出继续买入\n",
+						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, orderID)
 					orderID = ""
 				}
 			}
@@ -508,14 +509,14 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				//	TimeNow(), bot.Exchange.GetExchangeName(),bot.Name,currentUSDTAmount)
 				continue
 			}
-			Printf("[%s] [%s %s-USDT]第一次进入，直接尝试买入\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
+			Printf("[%s] [%s %s-USDT-bot %d]第一次进入，直接尝试买入\n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 
 			var orderTmp *api.Order
 			currentOrder, cerr := BuyIn(bot.LimitMoney, bot.LimitAmount, orderTmp, bot, exchangeCfg.RoiRate)
 			if cerr == nil {
-				Printf("[%s] [%s %s-USDT] 挂单（买）成功, 订单号:%s\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, currentOrder.OrderID2)
+				Printf("[%s] [%s %s-USDT-bot %d] 挂单（买）成功, 订单号:%s\n",
+					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,bot.ID, currentOrder.OrderID2)
 				orderID = currentOrder.OrderID2 //Sprintf("%d", currentOrder.OrderID) //保存最新ID
 
 				//完成时间
@@ -529,8 +530,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 			} else {
 				if cerr.Error() != "2009" { //2009 余额不足
-					Printf("[%s] [%s %s-USDT] 第一次进入，买入失败\n",
-						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
+					Printf("[%s] [%s %s-USDT-bot %d] 第一次进入，买入失败\n",
+						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 				}
 			}
 		}
@@ -541,8 +542,8 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 		//allSellMoney := float64(counterBuyin)
 	}
 
-	Printf("[%s] [%s %s-USDT] bot完成认为，结束\n",
-		TimeNow(), bot.Exchange.GetExchangeName(), bot.Name)
+	Printf("[%s] [%s %s-USDT-bot %d] bot完成认为，结束\n",
+		TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 
 }
 
@@ -589,6 +590,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 
 	timer := 0
 
+	printSpan:=0
 	for systemExit == false {
 
 		//满足一定条件，启动一个新的bot
@@ -615,7 +617,8 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, timer)
 		}
 		timer--
-		if time.Now().Minute() % 10 == 0 {//10 min print info
+		if printSpan == 600 {//10 min print info
+
 			pairCounter:=0
 			waitingOrder:=0
 			finishedOrder:=0
@@ -635,8 +638,9 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			}
 			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d)\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, pairCounter,waitingOrder, finishedOrder,cancelOrder)
-
+			printSpan = 0
 		}
+		printSpan++
 		time.Sleep(time.Second)
 
 	}
