@@ -591,6 +591,11 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 	timer := 0
 
 	printSpan:=0
+	var priceBegin float64 = 0.0001
+	tickerStart,err:=bot.Exchange.GetTicker(bot.CurrencyPair)
+	if err == nil {
+		priceBegin = tickerStart.Last
+	}
 	for systemExit == false {
 
 		//满足一定条件，启动一个新的bot
@@ -636,8 +641,15 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 					}
 				}
 			}
-			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d)\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, pairCounter,waitingOrder, finishedOrder,cancelOrder)
+			var priceCurr float64 = 0.0001
+			tickerCurr,err:=bot.Exchange.GetTicker(bot.CurrencyPair)
+			if err == nil {
+				priceCurr = tickerCurr.Last
+			}
+			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d) coin rate:%.4f\n",
+				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,
+					pairCounter,waitingOrder, finishedOrder,cancelOrder,
+				(priceCurr-priceBegin)/priceBegin)
 			printSpan = 0
 		}
 		printSpan++
