@@ -74,7 +74,7 @@ func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiR
 	//xx,_:=strconv.ParseFloat(strBuyPrice, 32)
 	//Printf("%.4f\n", xx)
 
-	time.Sleep(100* time.Millisecond)
+	time.Sleep(131* time.Millisecond)
 	order, err := bot.Exchange.LimitBuy(strbuyAmount, strBuyPrice, bot.CurrencyPair)
 	if nil == err {
 		Printf("[%s] [%s %s-USDT-bot %d] 挂买入单 ok : %d, 价格:%s /%s \n",
@@ -95,14 +95,14 @@ func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiR
 //计算可以买入的价格
 func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) float64  {
 	var price float64 = 0
-	time.Sleep(100* time.Millisecond)
+	time.Sleep(125* time.Millisecond)
 	ticker, err := exchange.GetTicker(pair)
 	if err != nil {
 		return price
 	}
 
 	price = ticker.Buy
-	time.Sleep(100* time.Millisecond)
+	time.Sleep(171* time.Millisecond)
 	depth, err:= exchange.GetDepth(50, pair)
 	if err == nil {
 
@@ -204,7 +204,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 		roiRate = roiCfgRate
 	}
 	sellPrice := latestOrder.Price * (1 + roiRate)
-	time.Sleep(100* time.Millisecond)
+	time.Sleep(101* time.Millisecond)
 	ticker, err := bot.Exchange.GetTicker(bot.CurrencyPair)
 	if err == nil {
 		if ticker.Sell > sellPrice { //如果收益计算后比当前市场卖价格低，直接挂市场卖价
@@ -212,7 +212,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 		}
 	}
 	sellPrice -= 0.01
-	time.Sleep(100* time.Millisecond)
+	time.Sleep(107* time.Millisecond)
 	depth, err:= bot.Exchange.GetDepth(50, bot.CurrencyPair)
 	if err == nil {
 		sellPrice = calcSellPrice(*depth, sellPrice, latestOrder.Price * roiCfgRate)
@@ -253,7 +253,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 	}
 
 	strSellPrice := Sprintf(bot.PriceDecimel, sellPrice)
-	time.Sleep(100* time.Millisecond)
+	time.Sleep(109* time.Millisecond)
 	order, err := bot.Exchange.LimitSell(strSellAmount, strSellPrice, bot.CurrencyPair)
 	if nil == err {
 		Printf("[%s] [%s %s-USDT-bot %d] 挂卖出单 ok : %d，价格:%s / %s \n",
@@ -275,14 +275,14 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 	shouldCancel := false
 	retErr := errors.New("挂取消单失败")
 	orderID := latestOrder.OrderID2
-	time.Sleep(100* time.Millisecond)
+	time.Sleep(117* time.Millisecond)
 	ticker, err := bot.Exchange.GetTicker(bot.CurrencyPair)
 	if err != nil {
 		Printf("[%s] [%s %s-USDT-bot %d] 获取Ticker出错，message: %s\n",
 			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,bot.ID, err.Error())
 		return shouldCancel, retErr
 	}
-	time.Sleep(100* time.Millisecond)
+	time.Sleep(108* time.Millisecond)
 	depth, err:= bot.Exchange.GetDepth(50, bot.CurrencyPair)
 	idxDepth := 0
 
@@ -301,7 +301,7 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 		Printf("[%s] [%s %s-USDT-bot %d] 取消订单，买入价格:%.4f, 现价: %.4f\n",
 			TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, bot.Price, ticker.Buy)
 		shouldCancel = true
-		time.Sleep(100* time.Millisecond)
+		time.Sleep(115* time.Millisecond)
 		_, err := bot.Exchange.CancelOrder(orderID, bot.CurrencyPair)
 		if nil == err {
 			//成功
