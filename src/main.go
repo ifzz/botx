@@ -375,12 +375,12 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				//Println(TimeNow() + "订单完成，如果是买入订单，则可以挂卖单")
 				currentOrder, cerr := SellOut(latestOrder, bot, speed, exchangeCfg.RoiRate, exchangeCfg.Mode)
 				if cerr == nil {
-					Printf("[%s] [%s %s-USDT-bot %d] couple (buy-sell),orderid:(%d-%d), price:(%.4f,%.4f), amount:(%.4f,%.4f), rate:%.4f\n",
+					Printf("[%s] [%s %s-USDT-bot %d] couple (buy-sell),orderid:(%d-%d), price:(%.4f,%.4f), amount:(%.4f,%.4f), rate:%.4f %%\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID,
 							latestOrder.OrderID, currentOrder.OrderID,
 						latestOrder.Price, currentOrder.Price,
 							latestOrder.Amount, currentOrder.Amount,
-						(currentOrder.Price - latestOrder.Price) / latestOrder.Price)
+						100 * (currentOrder.Price - latestOrder.Price) / latestOrder.Price)
 
 					orderID = currentOrder.OrderID2 //Sprintf("%d", currentOrder.OrderID) //保存最新ID
 
@@ -646,10 +646,10 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			if err == nil {
 				priceCurr = tickerCurr.Last
 			}
-			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d) coin pricebegin:%.4f,pricecurr:%.4f, rate:%.4f\n",
+			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d) coin pricebegin:%.4f,pricecurr:%.4f, rate:%.4f %%\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,
 					pairCounter,waitingOrder, finishedOrder,cancelOrder,
-				priceBegin, priceCurr, (priceCurr-priceBegin)/priceBegin)
+				priceBegin, priceCurr, 100 * (priceCurr-priceBegin)/priceBegin)
 			printSpan = 0
 		}
 		printSpan++
