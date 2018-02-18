@@ -334,7 +334,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	//orderMap := make(map[string]string) //记录所有成交对
 	for systemExit == false {
 
-		time.Sleep(1.1537 * time.Second)
+		time.Sleep(7539 * time.Millisecond)
 
 		acct, err := bot.Exchange.GetAccount()
 		if err != nil {
