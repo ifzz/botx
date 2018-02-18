@@ -646,10 +646,10 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			if err == nil {
 				priceCurr = tickerCurr.Last
 			}
-			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d) coin rate:%.4f\n",
+			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d) coin pricebegin:%.4f,pricecurr:%.4f, rate:%.4f\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,
 					pairCounter,waitingOrder, finishedOrder,cancelOrder,
-				(priceCurr-priceBegin)/priceBegin)
+				priceBegin, priceCurr, (priceCurr-priceBegin)/priceBegin)
 			printSpan = 0
 		}
 		printSpan++
