@@ -685,17 +685,19 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 		time.Sleep(time.Second)
 	}
 
+	timer:=0
 	for systemExit == false { //主线程等待
 
-		if time.Now().Minute()%10 == 0 { //10分钟打印一次
+		if timer  == 120 { //10分钟打印一次
 			//获取盈利情况//计算收益
 			balanceNow := getBalance(exchange, nil)
 			rate := (api.ToFloat64(balanceNow) - api.ToFloat64(balanceBegin)) / api.ToFloat64(balanceBegin)
 			rate = rate * 100
 			Printf("[%s] [%s-USDT] 开始余额:%s, 当前余额: %s，整体累积收益率:%.4f %%\n",
 				TimeNow(), exchange.GetExchangeName(), balanceBegin, balanceNow, rate)
-
+			timer = 0
 		}
+		timer++
 
 		time.Sleep(5 * time.Second)
 
