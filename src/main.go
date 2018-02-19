@@ -686,7 +686,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			if err == nil {
 				priceCurr = tickerCurr.Last
 			}
-			Printf("[%s] [%s %s-USDT] status (pair:%d, finished:%d, waiting:%d, finished:%d, cancel:%d, total:%d) %.4f->%.4f(%.4f%%)\n",
+			Printf("[%s] [%s %s-USDT]总交易对:%d,完成交易对:%d,待成交订单:%d,完成订单:%d,取消订单:%d,总订单:%d,币价从%.4f到%.4f(变化率%.4f%%)\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,
 					pairCounter, finishedPairCounter, waitingOrder, finishedOrder,cancelOrder,
 						(waitingOrder+finishedOrder+cancelOrder),
