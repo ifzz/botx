@@ -332,7 +332,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	var counterBuyinMoney float64 = 0
 	var counterSelloutMoney float64 = 0
 	//orderMap := make(map[string]string) //记录所有成交对
-	var updateTimer := 0
+	var updateTimer = 0
 	for systemExit == false {
 
 		time.Sleep(17539 * time.Millisecond)
