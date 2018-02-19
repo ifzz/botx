@@ -49,8 +49,8 @@ type Bot struct {
 	Name      string
 	StartTime time.Time //启动时间
 
-	OrderList map[int] OrderInfo //key is id
-	OrderPair map[int] int //id,id
+	OrderList map[int] OrderInfo //key is 订单id
+	OrderPair map[int] int //key:买入订单id, 卖出订单id
 }
 
 //买入
@@ -332,6 +332,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	var counterBuyinMoney float64 = 0
 	var counterSelloutMoney float64 = 0
 	//orderMap := make(map[string]string) //记录所有成交对
+	var updateTimer := 0
 	for systemExit == false {
 
 		time.Sleep(17539 * time.Millisecond)
@@ -541,16 +542,44 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 		}
 
 		//TODO 计算收益
-		//currBal := getBalance(bot.Exchange, &bot.CurrencyPair.CurrencyA)
-		//allBuyMoney := float64(counterBuyin) * exchangeCfg.BuyLimitMoney
-		//allSellMoney := float64(counterBuyin)
+		updateTimer++
+		if updateTimer >= 13 {
+			updateStatus(bot)
+			updateTimer = 0
+		}
+
 	}
 
 	Printf("[%s] [%s %s-USDT-bot %d] bot完成认为，结束\n",
 		TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 
 }
+func updateStatus(bot *Bot)  {
 
+	for orderid, order := range bot.OrderList {
+		//检查和更新一遍订单状态，更新成交pair
+		if order.Status == 1 { //只针对未变更的订单（waiting）
+			//未完成状态
+			strID := Sprintf("%d", orderid)
+			orderN ,err:=bot.Exchange.GetOneOrder(strID, bot.CurrencyPair)
+			if err ==nil {
+				switch orderN.Status {
+				case api.ORDER_FINISH:
+					//set status to finished
+					order.Status = 0 //完成
+					bot.OrderList[orderid] = order //modiy order list status
+				case api.ORDER_CANCEL:
+					order.Status = 2 //cancel
+					bot.OrderList[orderid] = order //modiy order list status
+				case api.ORDER_UNFINISH:
+					order.Status = 1 //cancel
+					bot.OrderList[orderid] = order //modiy order list status
+				}
+			}
+			time.Sleep(317 * time.Millisecond)
+		}
+	}
+}
 //计算roi
 func roiCalculate(bots [10000]Bot, cnt int) (bool) {
 	roiRate := 0.0
@@ -650,9 +679,9 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			if err == nil {
 				priceCurr = tickerCurr.Last
 			}
-			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d) coin pricebegin:%.4f,pricecurr:%.4f, rate:%.4f %%\n",
+			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d, total:%d) %.4f->%.4f(%.4f%%)\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,
-					pairCounter,waitingOrder, finishedOrder,cancelOrder,
+					pairCounter,waitingOrder, finishedOrder,cancelOrder, (waitingOrder+finishedOrder+cancelOrder),
 				priceBegin, priceCurr, 100 * (priceCurr-priceBegin)/priceBegin)
 			printSpan = 0
 		}
