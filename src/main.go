@@ -661,7 +661,14 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			waitingOrder:=0
 			finishedOrder:=0
 			cancelOrder:=0
+			finishedPairCounter:=0
 			for i:=0;i<currCnt;i++ {
+				for _,v:= range bots[i].OrderPair {
+					//直接检查卖出单的状态
+					if(bots[i].OrderList[v].Status == 0) {
+						finishedPairCounter++
+					}
+				}
 				pairCounter += len(bots[i].OrderPair)
 				for _,v:= range bots[i].OrderList {
 					switch v.Status {
@@ -679,9 +686,10 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			if err == nil {
 				priceCurr = tickerCurr.Last
 			}
-			Printf("[%s] [%s %s-USDT] status (pair:%d, waiting:%d, finished:%d, cancel:%d, total:%d) %.4f->%.4f(%.4f%%)\n",
+			Printf("[%s] [%s %s-USDT] status (pair:%d, finished:%d, waiting:%d, finished:%d, cancel:%d, total:%d) %.4f->%.4f(%.4f%%)\n",
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,
-					pairCounter,waitingOrder, finishedOrder,cancelOrder, (waitingOrder+finishedOrder+cancelOrder),
+					pairCounter, finishedPairCounter, waitingOrder, finishedOrder,cancelOrder,
+						(waitingOrder+finishedOrder+cancelOrder),
 				priceBegin, priceCurr, 100 * (priceCurr-priceBegin)/priceBegin)
 			printSpan = 0
 		}
