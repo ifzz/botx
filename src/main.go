@@ -426,6 +426,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				if currentUSDTAmount < bot.LimitAmount || exchangeCfg.WaitingQueue <= getWaitingSellOrderSize(bot) {
 					//Printf("[%s][%s %s-USDT]  账户余额不足 :%.4f\n",
 					//	TimeNow(),bot.Exchange.GetExchangeName(),bot.Name, currentUSDTAmount)
+					time.Sleep(1375 * time.Millisecond)
 					continue
 				}
 
@@ -512,6 +513,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 			if currentUSDTAmount < bot.LimitAmount || exchangeCfg.WaitingQueue <= getWaitingSellOrderSize(bot) {
 				//Printf("[%s]  [%s %s-USDT]账户余额不足 :%.4f\n",
 				//	TimeNow(), bot.Exchange.GetExchangeName(),bot.Name,currentUSDTAmount)
+				time.Sleep(1237 * time.Millisecond)
 				continue
 			}
 			//Printf("[%s] [%s %s-USDT-bot %d]第一次进入，直接尝试买入\n",
