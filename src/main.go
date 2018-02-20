@@ -816,6 +816,10 @@ func getBalance(exchange api.API, currency *api.Currency) string {
 				amount := subItem.Amount + subItem.ForzenAmount
 
 				if amount > 0 {
+					if curr == api.USDT { //如果是USDT，直接退出循环
+						balance += amount
+						break
+					}
 					time.Sleep(131 * time.Millisecond)
 					ticker, err := exchange.GetTicker(api.CurrencyPair{*currency, api.USDT})
 					if err != nil {
