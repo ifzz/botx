@@ -176,10 +176,10 @@ func calcSellPrice(depth api.Depth, orignPrice float64, minPrice float64) float6
 	}
 	avBidPrice = avBidPrice / avBidAmount
 
-	base10Price := depth.AskList[9].Price
-	if orignPrice > avAskPrice || orignPrice > base10Price {
-		//如果当前设定的价格过高: 高于平均卖单价格，或者高于第10层的价格，调低价格
-		tmp := math.Min(avAskPrice, base10Price)
+	base20Price := depth.AskList[19].Price
+	if orignPrice > avAskPrice || orignPrice > base20Price {
+		//如果当前设定的价格过高: 高于平均卖单价格，或者高于第20层的价格，调低价格
+		tmp := math.Min(avAskPrice, base20Price)
 		price = math.Max(minPrice, tmp)
 	}
 	return price
