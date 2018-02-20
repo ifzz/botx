@@ -335,7 +335,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	var updateTimer = 0
 	for systemExit == false {
 
-		time.Sleep(17539 * time.Millisecond)
+		time.Sleep(1539 * time.Millisecond)
 
 		acct, err := bot.Exchange.GetAccount()
 		if err != nil {
@@ -423,10 +423,17 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 				//TODO,仓位管理，如果小于80%仓位，不要买入，不能满仓
 				//TODO,对于完成很快的bot，适当调整增加买入量
-				if currentUSDTAmount < bot.LimitAmount || exchangeCfg.WaitingQueue <= getWaitingSellOrderSize(bot) {
+				waitingOrderCnt:= getWaitingSellOrderSize(bot)
+				if currentUSDTAmount < bot.LimitMoney  || exchangeCfg.WaitingQueue <= waitingOrderCnt {
 					//Printf("[%s][%s %s-USDT]  账户余额不足 :%.4f\n",
 					//	TimeNow(),bot.Exchange.GetExchangeName(),bot.Name, currentUSDTAmount)
 					time.Sleep(1375 * time.Millisecond)
+					continue
+				}else {
+					//针对卖单队列长度，进行适当调整买入频率
+					timeWait:= 1 << uint(waitingOrderCnt)
+
+					time.Sleep(time.Duration(timeWait) * time.Minute)
 					continue
 				}
 
@@ -509,11 +516,17 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 		} else {
 			//第一次进入，直接尝试买入
-
-			if currentUSDTAmount < bot.LimitAmount || exchangeCfg.WaitingQueue <= getWaitingSellOrderSize(bot) {
+			waitingOrderCnt:= getWaitingSellOrderSize(bot)
+			if currentUSDTAmount < bot.LimitMoney || exchangeCfg.WaitingQueue <= waitingOrderCnt {
 				//Printf("[%s]  [%s %s-USDT]账户余额不足 :%.4f\n",
 				//	TimeNow(), bot.Exchange.GetExchangeName(),bot.Name,currentUSDTAmount)
 				time.Sleep(1237 * time.Millisecond)
+				continue
+			} else {
+				//针对卖单队列长度，进行适当调整买入频率
+				timeWait:= 1 << uint(waitingOrderCnt)
+
+				time.Sleep(time.Duration(timeWait) * time.Minute)
 				continue
 			}
 			//Printf("[%s] [%s %s-USDT-bot %d]第一次进入，直接尝试买入\n",
@@ -545,7 +558,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 		//TODO 计算收益
 		updateTimer++
-		if updateTimer >= 9 {// 约3分钟更新一次
+		if updateTimer >= 5 {// 约1分钟更新一次
 			updateStatus(bot)
 			updateTimer = 0
 		}
