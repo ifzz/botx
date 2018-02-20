@@ -14,6 +14,7 @@
             <timeoutSellOrder>360</timeoutSellOrder>
             <mode>2</mode>
             <botTimeSpan>10</botTimeSpan>
+            <waitingQueue>10</waitingQueue>
             <coins>
                 <coin>
                     <enable>0</enable>

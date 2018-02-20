@@ -423,7 +423,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 				//TODO,仓位管理，如果小于80%仓位，不要买入，不能满仓
 				//TODO,对于完成很快的bot，适当调整增加买入量
-				if currentUSDTAmount < bot.LimitAmount {
+				if currentUSDTAmount < bot.LimitAmount || exchangeCfg.WaitingQueue <= getWaitingSellOrderSize(bot) {
 					//Printf("[%s][%s %s-USDT]  账户余额不足 :%.4f\n",
 					//	TimeNow(),bot.Exchange.GetExchangeName(),bot.Name, currentUSDTAmount)
 					continue
@@ -509,7 +509,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 		} else {
 			//第一次进入，直接尝试买入
 
-			if currentUSDTAmount < bot.LimitAmount {
+			if currentUSDTAmount < bot.LimitAmount || exchangeCfg.WaitingQueue <= getWaitingSellOrderSize(bot) {
 				//Printf("[%s]  [%s %s-USDT]账户余额不足 :%.4f\n",
 				//	TimeNow(), bot.Exchange.GetExchangeName(),bot.Name,currentUSDTAmount)
 				continue
@@ -543,7 +543,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 
 		//TODO 计算收益
 		updateTimer++
-		if updateTimer >= 13 {
+		if updateTimer >= 9 {// 约3分钟更新一次
 			updateStatus(bot)
 			updateTimer = 0
 		}
@@ -553,6 +553,18 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	Printf("[%s] [%s %s-USDT-bot %d] bot完成认为，结束\n",
 		TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 
+}
+func getWaitingSellOrderSize(bot *Bot) int{
+	counter:=0
+	for _, sellOrderID := range bot.OrderPair {
+		//检查和更新一遍订单状态，更新成交pair
+		order := bot.OrderList[sellOrderID]
+		if order.Status == 1 { //只针对未变更的订单（waiting）
+			counter++
+		}
+	}
+
+	return counter
 }
 func updateStatus(bot *Bot)  {
 
@@ -572,7 +584,7 @@ func updateStatus(bot *Bot)  {
 					order.Status = 2 //cancel
 					bot.OrderList[orderid] = order //modiy order list status
 				case api.ORDER_UNFINISH:
-					order.Status = 1 //cancel
+					order.Status = 1 //waiting
 					bot.OrderList[orderid] = order //modiy order list status
 				}
 			}
