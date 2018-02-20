@@ -18,6 +18,7 @@ import (
 	"strings"
 	"syscall"
 	"math"
+	"strconv"
 )
 
 var systemExit bool = false
@@ -691,6 +692,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 					pairCounter, finishedPairCounter, waitingOrder, finishedOrder,cancelOrder,
 						(waitingOrder+finishedOrder+cancelOrder),
 				priceBegin, priceCurr, 100 * (priceCurr-priceBegin)/priceBegin)
+
 			printSpan = 0
 		}
 		printSpan++
@@ -704,7 +706,9 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 func startExchange(exchange api.API, exchangeCfg SExchange) {
 
 	Printf("[%s] 启动%s bot\n", TimeNow(), exchange.GetExchangeName())
-	balanceBegin := getBalance(exchange, nil)
+
+	balanceBeginUSDT:= api.ToFloat64(getBalance(exchange, &api.USDT))//USDT余额
+	var balanceBeginCoins float64 = 0
 
 	oldTime := time.Unix(1480390585, 0)
 	for _, coin := range exchangeCfg.Coins.Coin {
@@ -719,6 +723,7 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now(),
 			nil, nil} //初始化
 		go startBots(coinBot, exchangeCfg)
+		balanceBeginCoins += api.ToFloat64(getBalance(exchange, &api.Currency{coin.Name,""}))
 		time.Sleep(time.Second)
 	}
 
@@ -727,11 +732,24 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 
 		if timer  == 120 { //10分钟打印一次
 			//获取盈利情况//计算收益
-			balanceNow := getBalance(exchange, nil)
-			rate := (api.ToFloat64(balanceNow) - api.ToFloat64(balanceBegin)) / api.ToFloat64(balanceBegin)
+			balanceCurrentUSDT := api.ToFloat64(getBalance(exchange, &api.USDT))
+
+			var balanceCurrentCoins float64 = 0
+			coinNames := "USDT"
+			for _, coin := range exchangeCfg.Coins.Coin {
+				if coin.Enable == false {
+					continue
+				}
+				coinNames = coinNames + "-" + coin.Name
+				balanceCurrentCoins += api.ToFloat64(getBalance(exchange, &api.Currency{coin.Name,""}))
+			}
+			rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT)
 			rate = rate * 100
-			Printf("[%s] [%s-USDT] 开始余额:%s, 当前余额: %s，整体累积收益率:%.4f %%\n",
-				TimeNow(), exchange.GetExchangeName(), balanceBegin, balanceNow, rate)
+			Printf("[%s] [%s-USDT]有效货币(%s), 开始余额:%.4f, 当前余额: %.4f，整体累积收益率:%.4f%%\n",
+				TimeNow(), exchange.GetExchangeName(), coinNames,
+					balanceBeginUSDT + balanceBeginCoins,
+				balanceCurrentUSDT + balanceCurrentCoins,
+						 rate)
 			timer = 0
 		}
 		timer++
