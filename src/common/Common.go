@@ -35,6 +35,7 @@ type SExchange struct {
 	Mode     int 	`xml:"mode"`
 	BotTimeSpan int `xml:"botTimeSpan"` //second
 	WaitingQueue int `xml:"waitingQueue"`
+	FreeUseQueue int `xml:"freeUseQueue"`
 }
 type SCoins struct {
 	Coin []SCoin `xml:"coin"`

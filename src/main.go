@@ -446,11 +446,13 @@ func Start(botID int, exchangeCfg SExchange) {
 					continue
 				}else {
 					//针对卖单队列长度，进行适当调整买入频率
-					timeWait:= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
-					time.Sleep(time.Duration(timeWait) * time.Minute)
-					//Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
-					//	TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
+					if waitingOrderCnt > exchangeCfg.FreeUseQueue {
+						timeWait:= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
+						time.Sleep(time.Duration(timeWait) * time.Minute)
+						Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
+							TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
 
+					}
 				}
 
 				//Println(TimeNow() + "订单完成，如果是卖出订单，可以挂买单")
@@ -542,10 +544,14 @@ func Start(botID int, exchangeCfg SExchange) {
 				continue
 			} else {
 				//针对卖单队列长度，进行适当调整买入频率
-				timeWait:= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
-				//Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
-				//	TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
-				time.Sleep(time.Duration(timeWait) * time.Minute)
+				//针对卖单队列长度，进行适当调整买入频率
+				if waitingOrderCnt > exchangeCfg.FreeUseQueue {
+					timeWait:= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
+					time.Sleep(time.Duration(timeWait) * time.Minute)
+					Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
+						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
+
+				}
 
 			}
 			//Printf("[%s] [%s %s-USDT-bot %d]第一次进入，直接尝试买入\n",
