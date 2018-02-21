@@ -53,6 +53,9 @@ type Bot struct {
 	OrderPair map[int] int //key:买入订单id, 卖出订单id
 }
 
+var bots [10000]Bot //最大启动10000个机器人
+var botCount int = 0 //
+
 //买入
 func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiRateCfg float64) (*api.Order, error) {
 	retErr := errors.New(TimeNow() + "挂买单失败")
@@ -316,9 +319,13 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
 }
 
+func getBot(botID int) *Bot {
+	return &bots[botID]
+}
 ///程序启动一个bot
-func Start(bot *Bot, exchangeCfg SExchange) {
+func Start(botID int, exchangeCfg SExchange) {
 
+	bot:= getBot(botID)
 	Printf("[%s] [%s %s-USDT-bot %d] start a new bot \n",
 		TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 
@@ -335,7 +342,13 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 	var updateTimer = 0
 	for systemExit == false {
 
-		time.Sleep(1539 * time.Millisecond)
+		time.Sleep(3539 * time.Millisecond)
+		//TODO 计算收益
+		updateTimer++
+		if updateTimer >= 20 {// 约1分钟更新一次
+			updateStatus(bot)
+			updateTimer = 0
+		}
 
 		acct, err := bot.Exchange.GetAccount()
 		if err != nil {
@@ -431,7 +444,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 					continue
 				}else {
 					//针对卖单队列长度，进行适当调整买入频率
-					timeWait:= 1 << uint(waitingOrderCnt)
+					timeWait:= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
 
 					time.Sleep(time.Duration(timeWait) * time.Minute)
 					continue
@@ -524,8 +537,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 				continue
 			} else {
 				//针对卖单队列长度，进行适当调整买入频率
-				timeWait:= 1 << uint(waitingOrderCnt)
-
+				timeWait:= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
 				time.Sleep(time.Duration(timeWait) * time.Minute)
 				continue
 			}
@@ -556,12 +568,7 @@ func Start(bot *Bot, exchangeCfg SExchange) {
 			}
 		}
 
-		//TODO 计算收益
-		updateTimer++
-		if updateTimer >= 5 {// 约1分钟更新一次
-			updateStatus(bot)
-			updateTimer = 0
-		}
+
 
 	}
 
@@ -608,7 +615,7 @@ func updateStatus(bot *Bot)  {
 	}
 }
 //计算roi
-func roiCalculate(bots [10000]Bot, cnt int) (bool) {
+func roiCalculate() (bool) {
 	roiRate := 0.0
 
 	roiWell := true //加速度，确定等待时间，是否有收益，决定是否可以启动新的bot
@@ -617,13 +624,13 @@ func roiCalculate(bots [10000]Bot, cnt int) (bool) {
 	//成交很快，可以新增
 
 	var timeSpan int64 = 0
-	for i := 0; i < cnt; i++ {
+	for i := 0; i < botCount; i++ {
 		roiRate += bots[i].RoiRate
 		timeSpan += (time.Now().Unix() - bots[i].Timestamp.Unix())
 
 	}
 
-	av := float64(timeSpan) / float64(cnt)
+	av := float64(timeSpan) / float64(botCount)
 	if roiRate >= 0.0 {
 		//整体有收益的情况，且平均成单时间小于10分钟，或大于60分钟，经验值
 		if av < 600 || av > 3600 {
@@ -633,29 +640,20 @@ func roiCalculate(bots [10000]Bot, cnt int) (bool) {
 	return roiWell
 }
 
+
 //启动bots
 func startBots(bot Bot, exchangeCfg SExchange) {
 	//bot start，启动策略
 	maxCnt := exchangeCfg.MaxBotNum
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	var bots [10000]Bot //最大启动10000个机器人
 
 	if maxCnt > 10000 {
 		maxCnt = 10000
 	}
 
 	currBotID := 0
-
-	currCnt := 0
-
 	timer := 0
 
-	printSpan:=0
-	var priceBegin float64 = 0.0001
-	tickerStart,err:=bot.Exchange.GetTicker(bot.CurrencyPair)
-	if err == nil {
-		priceBegin = tickerStart.Last
-	}
 	for systemExit == false {
 
 		//满足一定条件，启动一个新的bot
@@ -665,15 +663,15 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 			roiWell = true //roiCalculate(bots, currBotID)
 
 			//只要有收益，就可以启动新的bot
-			if roiWell == true && maxCnt > currCnt {
+			if roiWell == true && maxCnt > botCount {
 				bots[currBotID] = bot                  //初始化
 				bots[currBotID].ID = currBotID + 1     //修改ID
 				bots[currBotID].StartTime = time.Now() //启动时间
 				bots[currBotID].OrderList = make(map[int] OrderInfo)
 				bots[currBotID].OrderPair = make(map[int] int)
-				go Start(&bots[currBotID], exchangeCfg)
-				currCnt++
+				go Start(currBotID, exchangeCfg)
 				currBotID++
+				botCount++
 			}
 
 			//设置间隔，最大5*1800s （2.5小时），最少1800s（30分钟）
@@ -682,14 +680,77 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, timer)
 		}
 		timer--
-		if printSpan == 600 {//10 min print info
+
+		time.Sleep(time.Second)
+
+	}
+
+}
+
+type PriceInfo struct {
+	PriceBegin float64
+	PriceCurrent float64
+}
+//启动一个交易平台
+func startExchange(exchange api.API, exchangeCfg SExchange) {
+
+	Printf("[%s] 启动%s bot\n", TimeNow(), exchange.GetExchangeName())
+
+	balanceBeginUSDT:= api.ToFloat64(getBalance(exchange, &api.USDT))//USDT余额
+	var balanceBeginCoins float64 = 0
+
+	oldTime := time.Unix(1480390585, 0)
+	var coinsPriceMap map[string] PriceInfo = make(map[string] PriceInfo)
+	for _, coin := range exchangeCfg.Coins.Coin {
+		if coin.Enable == false {
+			continue
+		}
+		Printf("[%s] %s - [%s-USDT] 启动状态 \n", TimeNow(), exchange.GetExchangeName(), coin.Name)
+		pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
+		coinBot := Bot{0, exchangeCfg.BuyLimitMoney, coin.LimitAmount,0.0,
+			0, oldTime, 0, exchangeCfg.RoiRate, 0,
+			pair, exchange, 1.0,
+			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now(),
+			nil, nil} //初始化
+		go startBots(coinBot, exchangeCfg)
+		balanceBeginCoins += api.ToFloat64(getBalance(exchange, &api.Currency{coin.Name,""}))
+		var priceBegin PriceInfo
+		ticker,err:= exchange.GetTicker(coinBot.CurrencyPair)
+		if err == nil {
+			priceBegin.PriceBegin = ticker.Last
+		}else {
+			priceBegin.PriceBegin = 0.0001
+		}
+		coinsPriceMap[coin.Name] = priceBegin
+		time.Sleep(time.Second)
+	}
+
+	timer:=125 //开始就打印一次
+	for systemExit == false { //主线程等待
+
+		if timer  >= 120 { //10分钟打印一次
+			//获取盈利情况//计算收益
+			balanceCurrentUSDT := api.ToFloat64(getBalance(exchange, &api.USDT))
+
+			var balanceCurrentCoins float64 = 0
+			coinNames := "USDT"
+			for _, coin := range exchangeCfg.Coins.Coin {
+				if coin.Enable == false {
+					continue
+				}
+				coinNames = coinNames + "-" + coin.Name
+				balanceCurrentCoins += api.ToFloat64(getBalance(exchange, &api.Currency{coin.Name,""}))
+			}
+			rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT)
+			rate = rate * 100
 
 			pairCounter:=0
 			waitingOrder:=0
 			finishedOrder:=0
 			cancelOrder:=0
 			finishedPairCounter:=0
-			for i:=0;i<currCnt;i++ {
+			coinPriceInfo := ""
+			for i:=0;i<botCount;i++ {
 				for _,v:= range bots[i].OrderPair {
 					//直接检查卖出单的状态
 					if(bots[i].OrderList[v].Status == 0) {
@@ -707,75 +768,28 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 						cancelOrder++
 					}
 				}
-			}
-			var priceCurr float64 = 0.0001
-			tickerCurr,err:=bot.Exchange.GetTicker(bot.CurrencyPair)
-			if err == nil {
-				priceCurr = tickerCurr.Last
-			}
-			Printf("[%s] [%s %s-USDT]总交易对:%d,完成交易对:%d,待成交订单:%d,完成订单:%d,取消订单:%d,总订单:%d,币价从%.4f到%.4f(变化率%.4f%%)\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,
-					pairCounter, finishedPairCounter, waitingOrder, finishedOrder,cancelOrder,
-						(waitingOrder+finishedOrder+cancelOrder),
-				priceBegin, priceCurr, 100 * (priceCurr-priceBegin)/priceBegin)
-
-			printSpan = 0
-		}
-		printSpan++
-		time.Sleep(time.Second)
-
-	}
-
-}
-
-//启动一个交易平台
-func startExchange(exchange api.API, exchangeCfg SExchange) {
-
-	Printf("[%s] 启动%s bot\n", TimeNow(), exchange.GetExchangeName())
-
-	balanceBeginUSDT:= api.ToFloat64(getBalance(exchange, &api.USDT))//USDT余额
-	var balanceBeginCoins float64 = 0
-
-	oldTime := time.Unix(1480390585, 0)
-	for _, coin := range exchangeCfg.Coins.Coin {
-		if coin.Enable == false {
-			continue
-		}
-		Printf("[%s] %s - [%s-USDT] 启动状态 \n", TimeNow(), exchange.GetExchangeName(), coin.Name)
-		pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
-		coinBot := Bot{0, exchangeCfg.BuyLimitMoney, coin.LimitAmount,0.0,
-			0, oldTime, 0, exchangeCfg.RoiRate, 0,
-			pair, exchange, 1.0,
-			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now(),
-			nil, nil} //初始化
-		go startBots(coinBot, exchangeCfg)
-		balanceBeginCoins += api.ToFloat64(getBalance(exchange, &api.Currency{coin.Name,""}))
-		time.Sleep(time.Second)
-	}
-
-	timer:=0
-	for systemExit == false { //主线程等待
-
-		if timer  == 120 { //10分钟打印一次
-			//获取盈利情况//计算收益
-			balanceCurrentUSDT := api.ToFloat64(getBalance(exchange, &api.USDT))
-
-			var balanceCurrentCoins float64 = 0
-			coinNames := "USDT"
-			for _, coin := range exchangeCfg.Coins.Coin {
-				if coin.Enable == false {
-					continue
+				var priceCurr float64 = 0.0001
+				tickerCurr,err:=exchange.GetTicker(bots[i].CurrencyPair)
+				if err == nil {
+					priceCurr = tickerCurr.Last
 				}
-				coinNames = coinNames + "-" + coin.Name
-				balanceCurrentCoins += api.ToFloat64(getBalance(exchange, &api.Currency{coin.Name,""}))
+
+				priceInfo:=coinsPriceMap[bots[i].CurrencyPair.CurrencyA.Symbol]
+				priceInfo.PriceCurrent = priceCurr
+				coinsPriceMap[bots[i].CurrencyPair.CurrencyA.Symbol] = priceInfo
+				coinPriceInfo += Sprintf("%s币价从%.4f到%.4f,变化率:%.4f%%),",
+					bots[i].CurrencyPair.CurrencyA.Symbol, priceInfo.PriceBegin, priceInfo.PriceCurrent,
+					(priceInfo.PriceCurrent - priceInfo.PriceBegin) * 100 / priceInfo.PriceBegin)
+				time.Sleep(time.Second)
 			}
-			rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT)
-			rate = rate * 100
-			Printf("[%s] [%s-USDT]有效货币(%s), 开始余额:%.4f, 当前余额: %.4f，整体累积收益率:%.4f%%\n",
-				TimeNow(), exchange.GetExchangeName(), coinNames,
-					balanceBeginUSDT + balanceBeginCoins,
-				balanceCurrentUSDT + balanceCurrentCoins,
-						 rate)
+
+			Printf("[%s] [%s]有效货币(%s),开始余额:%.4f,当前余额:%.4f,累积收益:%.4f%%,总交易对:%d,完成交易对:%d,待成交订单:%d,完成订单:%d,取消订单:%d,总订单:%d,%s\n",
+				TimeNow(), exchange.GetExchangeName(),coinNames,
+				balanceBeginUSDT + balanceBeginCoins,
+				balanceCurrentUSDT + balanceCurrentCoins,rate,
+				pairCounter, finishedPairCounter, waitingOrder, finishedOrder,cancelOrder,
+				(waitingOrder+finishedOrder+cancelOrder),
+				coinPriceInfo)
 			timer = 0
 		}
 		timer++
