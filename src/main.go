@@ -450,7 +450,7 @@ func Start(botID int, exchangeCfg SExchange) {
 					time.Sleep(time.Duration(timeWait) * time.Minute)
 					Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
-					continue
+					
 				}
 
 				//Println(TimeNow() + "订单完成，如果是卖出订单，可以挂买单")
@@ -546,7 +546,7 @@ func Start(botID int, exchangeCfg SExchange) {
 				Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
 				time.Sleep(time.Duration(timeWait) * time.Minute)
-				continue
+
 			}
 			//Printf("[%s] [%s %s-USDT-bot %d]第一次进入，直接尝试买入\n",
 			//	TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
