@@ -455,7 +455,7 @@ func Start(botID int, exchangeCfg SExchange) {
 							TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
 
 					}else {
-						timeWait = r.Intn(10) //最大10分钟的随机等待时间
+						timeWait = r.Intn(5) //最大10分钟的随机等待时间
 					}
 					time.Sleep(time.Duration(timeWait) * time.Minute)
 				}
@@ -558,7 +558,7 @@ func Start(botID int, exchangeCfg SExchange) {
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
 
 				}else {
-					timeWait = r.Intn(10) //最大10分钟的随机等待时间
+					timeWait = r.Intn(5) //最大10分钟的随机等待时间
 				}
 				time.Sleep(time.Duration(timeWait) * time.Minute)
 
