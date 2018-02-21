@@ -440,17 +440,17 @@ func Start(botID int, exchangeCfg SExchange) {
 				if currentUSDTAmount < bot.LimitMoney  || exchangeCfg.WaitingQueue <= waitingOrderCnt {
 					//Printf("[%s][%s %s-USDT]  账户余额不足 :%.4f\n",
 					//	TimeNow(),bot.Exchange.GetExchangeName(),bot.Name, currentUSDTAmount)
-					Printf("[%s] [%s %s-USDT-bot %d] 余额不足:%.4f,队列:%d\n",
-						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, currentUSDTAmount, waitingOrderCnt)
+					//Printf("[%s] [%s %s-USDT-bot %d] 余额不足:%.4f,队列:%d\n",
+					//	TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, currentUSDTAmount, waitingOrderCnt)
 					time.Sleep(1375 * time.Millisecond)
 					continue
 				}else {
 					//针对卖单队列长度，进行适当调整买入频率
 					timeWait:= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
 					time.Sleep(time.Duration(timeWait) * time.Minute)
-					Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
-						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
-					
+					//Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
+					//	TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
+
 				}
 
 				//Println(TimeNow() + "订单完成，如果是卖出订单，可以挂买单")
@@ -536,15 +536,15 @@ func Start(botID int, exchangeCfg SExchange) {
 			if currentUSDTAmount < bot.LimitMoney || exchangeCfg.WaitingQueue <= waitingOrderCnt {
 				//Printf("[%s]  [%s %s-USDT]账户余额不足 :%.4f\n",
 				//	TimeNow(), bot.Exchange.GetExchangeName(),bot.Name,currentUSDTAmount)
-				Printf("[%s] [%s %s-USDT-bot %d] 余额不足:%.4f,队列:%d\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, currentUSDTAmount, waitingOrderCnt)
+				//Printf("[%s] [%s %s-USDT-bot %d] 余额不足:%.4f,队列:%d\n",
+				//	TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, currentUSDTAmount, waitingOrderCnt)
 				time.Sleep(1237 * time.Millisecond)
 				continue
 			} else {
 				//针对卖单队列长度，进行适当调整买入频率
 				timeWait:= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
-				Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
-					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
+				//Printf("[%s] [%s %s-USDT-bot %d] 针对卖单队列长度,进行适当调整买入频率,队列:%d\n",
+				//	TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, waitingOrderCnt)
 				time.Sleep(time.Duration(timeWait) * time.Minute)
 
 			}
@@ -791,13 +791,13 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 				time.Sleep(time.Second)
 			}
 
-			Printf("[%s] [%s]有效货币(%s),开始余额:%.4f,当前余额:%.4f,累积收益:%.4f%%,总交易对:%d,完成交易对:%d,待成交订单:%d,完成订单:%d,取消订单:%d,总订单:%d,%s\n",
+			Printf("[%s] [%s]有效货币(%s),开始余额:%.4f,当前余额:%.4f,累积收益:%.4f%%,总交易对:%d,完成交易对:%d,待成交订单:%d,完成订单:%d,取消订单:%d,总订单:%d,%s currentUSDT:%.4f\n",
 				TimeNow(), exchange.GetExchangeName(),coinNames,
 				balanceBeginUSDT + balanceBeginCoins,
-				balanceCurrentUSDT + balanceCurrentCoins,rate,
+				balanceCurrentUSDT + balanceCurrentCoins, rate,
 				pairCounter, finishedPairCounter, waitingOrder, finishedOrder,cancelOrder,
 				(waitingOrder+finishedOrder+cancelOrder),
-				coinPriceInfo)
+				coinPriceInfo, balanceCurrentUSDT)
 			timer = 0
 		}
 		timer++
