@@ -56,7 +56,7 @@ type Bot struct {
 var bots [10000]Bot //最大启动10000个机器人
 var botCount int = 0 //
 
-//买入
+//买入订单
 func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiRateCfg float64) (*api.Order, error) {
 	retErr := errors.New(TimeNow() + "挂买单失败")
 
@@ -69,7 +69,11 @@ func BuyIn(money float64, amount float64, latestOrder *api.Order, bot *Bot, roiR
 
 	buyAmount:= amount
 	if buyAmount == 0 {//如果不是按照量买入，则根据买入现金计算买入量，否则直接按照最小买入量
+		//根据当前剩余可用USDT资金，进行计算
 		buyAmount = money / buyPrice
+		if buyAmount < 0.0001 {
+			return nil, errors.New("余额不足买入，买入量小于0.0001")
+		}
 	}
 
 	strbuyAmount := Sprintf(bot.AmountDecimel, buyAmount)
@@ -319,9 +323,11 @@ func tryCancelOrder(latestOrder *api.Order, bot *Bot) (bool, error) {
 
 }
 
+//获取Bot实例
 func getBot(botID int) *Bot {
 	return &bots[botID]
 }
+
 ///程序启动一个bot
 func Start(botID int, exchangeCfg SExchange) {
 
@@ -351,22 +357,11 @@ func Start(botID int, exchangeCfg SExchange) {
 			updateTimer = 0
 		}
 
-		acct, err := bot.Exchange.GetAccount()
-		if err != nil {
-			msg:=err.Error()
-			if len(msg) > 100 {
-				msg = msg[0:100]
-			}
-			Printf("[%s] [%s %s-USDT-bot %d] 获取账户出错，继续， 信息:%s\n",
-				TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, msg)
-			continue
-		}
-
-		currentUSDTAmount := acct.SubAccounts[api.USDT].Amount
+		currentUSDTAmount := getAvailableAmount(bot.Exchange, &api.USDT)
 
 		//检查订单状态
 		if orderID != "" {
-			time.Sleep(131 * time.Millisecond)
+
 			latestOrder, err := bot.Exchange.GetOneOrder(orderID, bot.CurrencyPair)
 			if err != nil || latestOrder == nil {
 				Printf("[%s] [%s %s-USDT-bot %d] 读取订单(%s)状态失败:%s\n",
@@ -457,12 +452,13 @@ func Start(botID int, exchangeCfg SExchange) {
 					}else {
 						timeWait = r.Intn(5) //最大10分钟的随机等待时间
 					}
-					time.Sleep(time.Duration(timeWait) * time.Minute)
+					time.Sleep(time.Duration(timeWait) * time.Second)
 				}
 
 				//Println(TimeNow() + "订单完成，如果是卖出订单，可以挂买单")
+				availableMoney := currentUSDTAmount / float64(exchangeCfg.AverageNum)
 
-				currentOrder, cerr := BuyIn(bot.LimitMoney, bot.LimitAmount, latestOrder, bot, exchangeCfg.RoiRate)
+				currentOrder, cerr := BuyIn(availableMoney, bot.LimitAmount, latestOrder, bot, exchangeCfg.RoiRate)
 				if cerr == nil {
 					Printf("[%s] [%s %s-USDT-bot %d] 挂单（买）成功，订单号:%d\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, currentOrder.OrderID)
@@ -549,7 +545,6 @@ func Start(botID int, exchangeCfg SExchange) {
 				continue
 			} else {
 				//针对卖单队列长度，进行适当调整买入频率
-				//针对卖单队列长度，进行适当调整买入频率
 				timeWait:=0
 				if waitingOrderCnt > exchangeCfg.FreeUseQueue {
 					timeWait= waitingOrderCnt * 6//1 << uint(waitingOrderCnt)
@@ -560,14 +555,15 @@ func Start(botID int, exchangeCfg SExchange) {
 				}else {
 					timeWait = r.Intn(5) //最大10分钟的随机等待时间
 				}
-				time.Sleep(time.Duration(timeWait) * time.Minute)
+				time.Sleep(time.Duration(timeWait) * time.Second)
 
 			}
 			//Printf("[%s] [%s %s-USDT-bot %d]第一次进入，直接尝试买入\n",
 			//	TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 
 			var orderTmp *api.Order
-			currentOrder, cerr := BuyIn(bot.LimitMoney, bot.LimitAmount, orderTmp, bot, exchangeCfg.RoiRate)
+			availableMoney := currentUSDTAmount / float64(exchangeCfg.AverageNum)
+			currentOrder, cerr := BuyIn(availableMoney, bot.LimitAmount, orderTmp, bot, exchangeCfg.RoiRate)
 			if cerr == nil {
 				Printf("[%s] [%s %s-USDT-bot %d] 挂单（买）成功, 订单号:%s\n",
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name,bot.ID, currentOrder.OrderID2)
@@ -598,6 +594,8 @@ func Start(botID int, exchangeCfg SExchange) {
 		TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID)
 
 }
+
+//获取等待卖出订单数量
 func getWaitingSellOrderSize() int{
 	counter:=0
 	for _,bot:= range bots {
@@ -611,6 +609,8 @@ func getWaitingSellOrderSize() int{
 	}
 	return counter
 }
+
+//更新订单状态
 func updateStatus(bot *Bot)  {
 
 	for orderid, order := range bot.OrderList {
@@ -637,6 +637,7 @@ func updateStatus(bot *Bot)  {
 		}
 	}
 }
+
 //计算roi
 func roiCalculate() (bool) {
 	roiRate := 0.0
@@ -662,7 +663,6 @@ func roiCalculate() (bool) {
 	}
 	return roiWell
 }
-
 
 //启动bots
 func startBots(bot Bot, exchangeCfg SExchange) {
@@ -714,6 +714,7 @@ type PriceInfo struct {
 	PriceBegin float64
 	PriceCurrent float64
 }
+
 //启动一个交易平台
 func startExchange(exchange api.API, exchangeCfg SExchange) {
 
@@ -916,7 +917,7 @@ func ExitFunc() {
 	os.Exit(0)
 }
 
-//入口
+//botx入口
 func main() {
 
 	configFile := flag.String("c", "../conf/config.xml", "load config file")

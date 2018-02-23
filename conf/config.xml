@@ -16,6 +16,7 @@
             <botTimeSpan>10</botTimeSpan>
             <waitingQueue>10</waitingQueue>
             <freeUseQueue>5</freeUseQueue>
+            <averageNum>20</averageNum>
             <coins>
                 <coin>
                     <enable>0</enable>
