@@ -218,12 +218,14 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 			sellPrice = ticker.Sell
 		}
 	}
-	sellPrice -= 0.01
+
 	time.Sleep(107* time.Millisecond)
 	depth, err:= bot.Exchange.GetDepth(50, bot.CurrencyPair)
 	if err == nil {
-		sellPrice = calcSellPrice(*depth, sellPrice, latestOrder.Price * roiCfgRate)
+		sellPrice = calcSellPrice(*depth, sellPrice, latestOrder.Price * (1 + roiCfgRate))
 	}
+	sellPrice -= 0.01
+
 	//2018/2/15 根据mode判断卖出价格，TODO，可能有float精度损失
 	strSellAmount := "0.0"
 	availableAmount := getAvailableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
@@ -387,6 +389,8 @@ func Start(botID int, exchangeCfg SExchange) {
 					TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID, latestOrder.OrderID)
 
 				//Println(TimeNow() + "订单完成，如果是买入订单，则可以挂卖单")
+				//waitingOrderCnt:= getWaitingSellOrderSize()
+				//extendRate := float64(waitingOrderCnt) * exchangeCfg.RoiRate
 				currentOrder, cerr := SellOut(latestOrder, bot, speed, exchangeCfg.RoiRate, exchangeCfg.Mode)
 				if cerr == nil {
 					Printf("[%s] [%s %s-USDT-bot %d] couple (buy-sell),orderid:(%d-%d), price:(%.4f,%.4f), amount:(%.4f,%.4f), rate:%.4f %%\n",
