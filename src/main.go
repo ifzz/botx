@@ -22,11 +22,7 @@ import (
 
 var systemExit bool = false
 
-type OrderInfo struct {
-	Price float64
-	Amount float64
-	Status int //0-finished,1-waiting,2-cancel
-}
+
 type Bot struct {
 	ID           int              // BotID
 	LimitMoney       float64       //当前账户使用金额
@@ -228,7 +224,7 @@ func SellOut(latestOrder *api.Order, bot *Bot, speed int64, roiCfgRate float64, 
 
 	//2018/2/15 根据mode判断卖出价格，TODO，可能有float精度损失
 	strSellAmount := "0.0"
-	availableAmount := getAvailableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
+	availableAmount := GetAvailableAmount(bot.Exchange, &bot.CurrencyPair.CurrencyA)
 	if mode == MODE_COIN {
 
 		sellAmount := latestOrder.Amount / (1 + roiRate)
@@ -359,7 +355,7 @@ func Start(botID int, exchangeCfg SExchange) {
 			updateTimer = 0
 		}
 
-		currentUSDTAmount := getAvailableAmount(bot.Exchange, &api.USDT)
+		currentUSDTAmount := GetAvailableAmount(bot.Exchange, &api.USDT)
 
 		//检查订单状态
 		if orderID != "" {
@@ -714,17 +710,13 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 
 }
 
-type PriceInfo struct {
-	PriceBegin float64
-	PriceCurrent float64
-}
 
 //启动一个交易平台
 func startExchange(exchange api.API, exchangeCfg SExchange) {
 
 	Printf("[%s] 启动%s bot\n", TimeNow(), exchange.GetExchangeName())
 
-	balanceBeginUSDT:= api.ToFloat64(getBalance(exchange, &api.USDT))//USDT余额
+	balanceBeginUSDT:= api.ToFloat64(GetBalance(exchange, &api.USDT))//USDT余额
 	var balanceBeginCoins float64 = 0
 
 	oldTime := time.Unix(1480390585, 0)
@@ -741,7 +733,7 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 			coin.PriceDecimel, coin.AmountDecimel, coin.Name, time.Now(),
 			nil, nil} //初始化
 		go startBots(coinBot, exchangeCfg)
-		balanceBeginCoins += api.ToFloat64(getBalance(exchange, &api.Currency{coin.Name,""}))
+		balanceBeginCoins += api.ToFloat64(GetBalance(exchange, &api.Currency{coin.Name,""}))
 		var priceBegin PriceInfo
 		ticker,err:= exchange.GetTicker(coinBot.CurrencyPair)
 		if err == nil {
@@ -758,7 +750,7 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 
 		if timer  >= 120 { //10分钟打印一次
 			//获取盈利情况//计算收益
-			balanceCurrentUSDT := api.ToFloat64(getBalance(exchange, &api.USDT))
+			balanceCurrentUSDT := api.ToFloat64(GetBalance(exchange, &api.USDT))
 
 			var balanceCurrentCoins float64 = 0
 			coinNames := "USDT"
@@ -767,7 +759,7 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 					continue
 				}
 				coinNames = coinNames + "-" + coin.Name
-				balanceCurrentCoins += api.ToFloat64(getBalance(exchange, &api.Currency{coin.Name,""}))
+				balanceCurrentCoins += api.ToFloat64(GetBalance(exchange, &api.Currency{coin.Name,""}))
 			}
 			rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT)
 			rate = rate * 100
@@ -833,83 +825,6 @@ func exchangeObserve(exchange api.API, exchangeCfg SExchange) {
 	stratage.Start(exchange, exchangeCfg)
 }
 
-//获取可用的数字货币数量
-func getAvailableAmount(exchange api.API, currency *api.Currency) float64 {
-	time.Sleep(131 * time.Millisecond)
-	acc, err := exchange.GetAccount()
-	if err != nil {
-		//error
-		Printf("[%s] getBalance error , err message: %s\n", TimeNow(), err.Error())
-		return 0
-	}
-	amount := 0.0
-	for curr, subItem := range acc.SubAccounts {
-
-		if curr.Symbol == currency.Symbol {
-			amount = subItem.Amount
-			break
-		}
-
-	}
-	return amount
-}
-
-//获取账户总额
-func getBalance(exchange api.API, currency *api.Currency) string {
-	time.Sleep(131 * time.Millisecond)
-	acc, err := exchange.GetAccount()
-	if err != nil {
-		//error
-		Printf("[%s] getBalance error , err message: %s\n", TimeNow(), err.Error())
-		return "0.0000"
-	}
-	balance := 0.0
-	for curr, subItem := range acc.SubAccounts {
-		if currency != nil {
-
-			if curr.Symbol == currency.Symbol {
-				amount := subItem.Amount + subItem.ForzenAmount
-
-				if amount > 0 {
-					if curr == api.USDT { //如果是USDT，直接退出循环
-						balance += amount
-						break
-					}
-					time.Sleep(131 * time.Millisecond)
-					ticker, err := exchange.GetTicker(api.CurrencyPair{*currency, api.USDT})
-					if err != nil {
-						Printf("[%s] getBalance of %s error of get ticker , err message: %s\n",
-							TimeNow(), curr.String(), err.Error())
-						return "0.0000"
-					}
-					balance += amount * ticker.Last
-				}
-
-				break
-			}
-		} else { //get full
-			amount := subItem.Amount + subItem.ForzenAmount
-
-			if amount > 0 {
-				if curr != api.USDT {
-					ticker, err := exchange.GetTicker(api.CurrencyPair{curr, api.USDT})
-					if err != nil {
-						Printf("[%s] getBalance of %s error of get ticker , err message: %s\n",
-							TimeNow(), curr.String(), err.Error())
-						continue //忽略掉
-					}
-					//Printf("%s,%.4f\n",curr.String(), amount)
-					balance += amount * ticker.Last
-				} else {
-					balance += amount
-				}
-			}
-			time.Sleep(137 * time.Millisecond)
-		}
-	}
-	return Sprintf("%.4f", balance)
-
-}
 
 //程序退出
 func ExitFunc() {

@@ -3,7 +3,7 @@
     <system>botx</system>
     <exchanges>
         <exchange>
-            <enable>0</enable>
+            <enable>1</enable>
             <name>zb</name>
             <apiKey></apiKey>
             <secretKey></secretKey>
@@ -17,6 +17,7 @@
             <waitingQueue>10</waitingQueue>
             <freeUseQueue>5</freeUseQueue>
             <averageNum>20</averageNum>
+            <tradeFrequency>5</tradeFrequency>
             <coins>
                 <coin>
                     <enable>0</enable>
