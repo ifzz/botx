@@ -28,7 +28,7 @@ func whileBuying()  {
 				if sellOrderID != 0 {//已经挂卖出单，直接忽略
 					continue
 				}
-				
+
 				if buyOrder.Currency.Symbol != coin.Name {//不是当前判断货币
 					continue
 				}
@@ -89,12 +89,12 @@ func updateOrderStatus()  {
 			if err == nil {
 				switch exOrder.Status {
 				case api.ORDER_FINISH:
-					Printf("[%s] update order status to finished, orderid:%d, price:%.4f, amount:%.4f, side:%d",
+					Printf("[%s] update order status to finished, orderid:%d, price:%.4f, amount:%.4f, side:%d\n",
 						TimeNow(), order.ID, order.Price, order.Amount, order.Side)
 					order.Status = ORDERFINISHED
 					orderList[id] = order
 				case api.ORDER_CANCEL:
-					Printf("[%s] update order status to cancel, orderid:%d, price:%.4f, amount:%.4f, side:%d",
+					Printf("[%s] update order status to cancel, orderid:%d, price:%.4f, amount:%.4f, side:%d\n",
 						TimeNow(), order.ID, order.Price, order.Amount, order.Side)
 					order.Status = ORDERCANCEL
 					orderList[id] = order
@@ -142,6 +142,8 @@ func showROIBalance()  {
 		finishedOrder := 0
 		cancelOrder := 0
 
+		finishedBuyOrder := 0
+		finishedSellOrder := 0
 		totalOrder = len(orderList)
 		totalPair = len(orderMap)
 		for idBuy, idSell := range orderMap {
@@ -163,6 +165,12 @@ func showROIBalance()  {
 
 			if buyOrder.Status == ORDERFINISHED || sellOrder.Status == ORDERFINISHED {
 				finishedOrder++
+			}
+			if buyOrder.Status == ORDERFINISHED {
+				finishedBuyOrder++
+			}
+			if sellOrder.Status == ORDERFINISHED {
+				finishedOrder ++
 			}
 		}
 
@@ -196,7 +204,7 @@ func showROIBalance()  {
 		rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT + 0.0000001)
 		rate = rate * 100
 
-		Printf("[%s] [%s]有效货币(%s),开始余额:%.4f,当前余额:%.4f,累积收益:%.4f%%,总交易对:%d,完成交易对:%d,待成交订单:%d,完成订单:%d,取消订单:%d,总订单:%d,%s currentUSDT:%.4f\n",
+		Printf("[%s] [%s]有效货币(%s),开始余额:%.4f,当前余额:%.4f,累积收益:%.4f%%,总交易对:%d,完成交易对:%d,待成交订单:%d,完成订单:%d,取消订单:%d,总订单:%d,%s currentUSDT:%.4f, 完成买入单:%d, 完成卖出单:%d\n",
 			TimeNow(), exchange.GetExchangeName(), coinNames,
 			balanceBeginUSDT+balanceBeginCoins,
 			balanceCurrentUSDT+balanceCurrentCoins, rate,
@@ -204,7 +212,8 @@ func showROIBalance()  {
 			totalUnfinishedBuyOrder+totalUnfinishedSellOrder,
 			finishedOrder, cancelOrder,
 			totalOrder,
-			coinPriceInfo, balanceCurrentUSDT)
+			coinPriceInfo, balanceCurrentUSDT,
+				finishedBuyOrder, finishedSellOrder)
 
 		counter := 5 * 60
 		for *systemStatus == 0 && counter > 0 {
