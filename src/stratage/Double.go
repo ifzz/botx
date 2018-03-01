@@ -28,7 +28,9 @@ func whileBuying()  {
 					continue
 				}
 
-				if order.Status == ORDERPAIRFINISH || order.Status == ORDERCANCEL {
+				if order.Status == ORDERPAIRFINISH ||
+					order.Status == ORDERCANCEL ||
+						order.Status == ORDERFINISHED{
 					continue
 				}
 				coinAvAmount := GetAvailableAmount(exchange, &api.Currency{coin.Name,""})
@@ -36,17 +38,24 @@ func whileBuying()  {
 				if coinAvAmount >= order.Amount {
 					//可以卖出
 					pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
-					price := order.Price * (1 + config.RoiRate)
+
+					ticker,err := exchange.GetTicker(pair)
+					price := order.Price * (1 + config.RoiRate * 2)
+					if err == nil {
+						if price < ticker.Last {
+							price = ticker.Last
+						}
+					}
+
 					amount := order.Amount
 					strPrice := Sprintf(coin.PriceDecimel,price)
 					strAmout := Sprintf(coin.AmountDecimel,amount)
 					sellOrder,err := exchange.LimitSell(strAmout, strPrice, pair)
 					if err == nil {
-						order.Status = ORDERPAIRFINISH
 
 						currency := api.Currency{coin.Name, ""}
 						orderInfo := OrderInfo{sellOrder.OrderID, api.ToFloat64(price),
-						api.ToFloat64(amount), ORDERWAITING, currency, api.SELL}
+						api.ToFloat64(amount), ORDERPAIRFINISH, currency, api.SELL}
 						orderList[sellOrder.OrderID] = orderInfo
 
 						orderMap[order.ID] = sellOrder.OrderID//更新ID
@@ -213,7 +222,7 @@ func StartDouble(exc api.API, exchangeCfg SExchange, stat *int) {
 
 	orderList = make(map[int] OrderInfo)
 	orderMap = make(map[int] int)
-	
+
 	go showROIBalance()
 	go whileBuying()
 	go updateOrderStatus()
