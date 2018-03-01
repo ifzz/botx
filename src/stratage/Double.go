@@ -21,33 +21,36 @@ func whileBuying()  {
 				continue
 			}
 
-			for buyOrderID, _ := range orderMap {
+			for buyOrderID, sellOrderID := range orderMap {
 
-				order := orderList[buyOrderID]
-				if order.Currency.Symbol != coin.Name {
+				buyOrder := orderList[buyOrderID]
+
+				if sellOrderID != 0 {//已经挂卖出单，直接忽略
+					continue
+				}
+				
+				if buyOrder.Currency.Symbol != coin.Name {//不是当前判断货币
 					continue
 				}
 
-				if order.Status == ORDERPAIRFINISH ||
-					order.Status == ORDERCANCEL ||
-						order.Status == ORDERFINISHED{
+				if buyOrder.Status == ORDERCANCEL {//买入单已经取消
 					continue
 				}
 				coinAvAmount := GetAvailableAmount(exchange, &api.Currency{coin.Name,""})
 
-				if coinAvAmount >= order.Amount {
+				if coinAvAmount >= buyOrder.Amount {
 					//可以卖出
 					pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
 
 					ticker,err := exchange.GetTicker(pair)
-					price := order.Price * (1 + config.RoiRate * 2)
+					price := buyOrder.Price * (1 + config.RoiRate * 2)
 					if err == nil {
 						if price < ticker.Last {
 							price = ticker.Last
 						}
 					}
 
-					amount := order.Amount
+					amount := buyOrder.Amount
 					strPrice := Sprintf(coin.PriceDecimel,price)
 					strAmout := Sprintf(coin.AmountDecimel,amount)
 					sellOrder,err := exchange.LimitSell(strAmout, strPrice, pair)
@@ -58,9 +61,9 @@ func whileBuying()  {
 						api.ToFloat64(amount), ORDERPAIRFINISH, currency, api.SELL}
 						orderList[sellOrder.OrderID] = orderInfo
 
-						orderMap[order.ID] = sellOrder.OrderID//更新ID
+						orderMap[buyOrder.ID] = sellOrder.OrderID//更新ID
 						Printf("[%s] [%s] sell order, orderpair(%d:%d), price:%s, amount:%s\n",
-							TimeNow(), coin.Name,order.ID, sellOrder.OrderID, strPrice, strAmout)
+							TimeNow(), coin.Name,buyOrder.ID, sellOrder.OrderID, strPrice, strAmout)
 
 					}else {
 						Printf("[%s] sell one put order failed, err: %s\n", TimeNow(), err.Error())
