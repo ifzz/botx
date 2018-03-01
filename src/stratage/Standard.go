@@ -565,7 +565,8 @@ func Start(botID int, exchangeCfg SExchange) {
 				counterBuyin++
 				counterBuyinMoney += currentOrder.Price * currentOrder.Amount
 
-				orderInfo := OrderInfo{currentOrder.OrderID, currentOrder.Price, currentOrder.Amount,ORDERWAITING, bot.CurrencyPair.CurrencyA}
+				orderInfo := OrderInfo{currentOrder.OrderID, currentOrder.Price, currentOrder.Amount,
+				ORDERWAITING, bot.CurrencyPair.CurrencyA, api.BUY}
 				bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
 
 			} else {
