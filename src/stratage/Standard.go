@@ -395,7 +395,8 @@ func Start(botID int, exchangeCfg SExchange) {
 					//orderMap[latestOrder.OrderID2] = currentOrder.OrderID2
 					bot.OrderPair[latestOrder.OrderID] = currentOrder.OrderID
 
-					orderInfo := OrderInfo{currentOrder.OrderID,currentOrder.Price, currentOrder.Amount,ORDERWAITING,bot.CurrencyPair.CurrencyA}
+					orderInfo := OrderInfo{currentOrder.OrderID,currentOrder.Price, currentOrder.Amount,
+					ORDERWAITING,bot.CurrencyPair.CurrencyA, api.SELL}
 					bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
 
 					//TODO TEST 交易完成一次，则退出
@@ -464,7 +465,8 @@ func Start(botID int, exchangeCfg SExchange) {
 					counterBuyin++
 					counterBuyinMoney += currentOrder.Price * currentOrder.Amount
 
-					orderInfo := OrderInfo{currentOrder.OrderID, currentOrder.Price, currentOrder.Amount,ORDERWAITING, bot.CurrencyPair.CurrencyA}
+					orderInfo := OrderInfo{currentOrder.OrderID, currentOrder.Price, currentOrder.Amount,
+					ORDERWAITING, bot.CurrencyPair.CurrencyA, api.BUY}
 					bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
 				}
 

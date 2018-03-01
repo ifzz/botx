@@ -1,4 +1,4 @@
 cd ../src;
 mkdir ../bin;
-go build -o ../bin/botx main.go;
+go build -o ../bin/botx botx.go;
 cd -
