@@ -11,10 +11,6 @@ var exchange api.API
 var config SExchange
 var orderList map[int] OrderInfo //存储所有的order
 var orderMap map[int] int //买-卖订单倒排列表
-type BuyOrderList struct {
-	Order [] OrderInfo //只存储已经买入的且order
-}
-var orderListByCoins map[string] BuyOrderList //key: currency
 
 func whileBuying()  {
 
@@ -25,7 +21,12 @@ func whileBuying()  {
 				continue
 			}
 
-			for _, order := range orderListByCoins[coin.Name].Order {
+			for buyOrderID, _ := range orderMap {
+
+				order := orderList[buyOrderID]
+				if order.Currency.Symbol != coin.Name {
+					continue
+				}
 
 				if order.Status == ORDERPAIRFINISH || order.Status == ORDERCANCEL {
 					continue
@@ -44,20 +45,23 @@ func whileBuying()  {
 						order.Status = ORDERPAIRFINISH
 
 						currency := api.Currency{coin.Name, ""}
-						orderInfo := OrderInfo{sellOrder.OrderID, api.ToFloat64(price), api.ToFloat64(amount), ORDERWAITING, currency}
+						orderInfo := OrderInfo{sellOrder.OrderID, api.ToFloat64(price),
+						api.ToFloat64(amount), ORDERWAITING, currency, api.SELL}
 						orderList[sellOrder.OrderID] = orderInfo
 
 						orderMap[order.ID] = sellOrder.OrderID//更新ID
+						Printf("[%s] [%s] sell order, orderpair(%d:%d), price:%s, amount:%s\n",
+							TimeNow(), coin.Name,order.ID, sellOrder.OrderID, strPrice, strAmout)
 
 					}else {
-						Printf("sell one put order failed, err: %s\n", err.Error())
+						Printf("[%s] sell one put order failed, err: %s\n", TimeNow(), err.Error())
 					}
 					time.Sleep(time.Second)
 				}
 			}
 
 		}
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 	}
 }
 func updateOrderStatus()  {
@@ -73,9 +77,13 @@ func updateOrderStatus()  {
 			if err == nil {
 				switch exOrder.Status {
 				case api.ORDER_FINISH:
+					Printf("[%s] update order status to finished, orderid:%d, price:%.4f, amount:%.4f, side:%d",
+						TimeNow(), order.ID, order.Price, order.Amount, order.Side)
 					order.Status = ORDERFINISHED
 					orderList[id] = order
 				case api.ORDER_CANCEL:
+					Printf("[%s] update order status to cancel, orderid:%d, price:%.4f, amount:%.4f, side:%d",
+						TimeNow(), order.ID, order.Price, order.Amount, order.Side)
 					order.Status = ORDERCANCEL
 					orderList[id] = order
 				case api.ORDER_UNFINISH:
@@ -84,8 +92,11 @@ func updateOrderStatus()  {
 				time.Sleep(time.Second)//间隔1秒
 			}
 		}
-
-		time.Sleep(time.Minute) //每分钟更新一次
+		counter :=  60
+		for *systemStatus == 0 && counter > 0 {
+			counter--
+			time.Sleep(time.Second) //每分钟更新一次
+		}
 	}
 }
 func showROIBalance()  {
@@ -170,7 +181,7 @@ func showROIBalance()  {
 				(priceInfo.PriceCurrent-priceInfo.PriceBegin)*100/priceInfo.PriceBegin)
 
 		}
-		rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT + 0.000001)
+		rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT + 0.0000001)
 		rate = rate * 100
 
 		Printf("[%s] [%s]有效货币(%s),开始余额:%.4f,当前余额:%.4f,累积收益:%.4f%%,总交易对:%d,完成交易对:%d,待成交订单:%d,完成订单:%d,取消订单:%d,总订单:%d,%s currentUSDT:%.4f\n",
@@ -183,18 +194,23 @@ func showROIBalance()  {
 			totalOrder,
 			coinPriceInfo, balanceCurrentUSDT)
 
-		time.Sleep(5 * time.Minute)
+		counter := 5 * 60
+		for *systemStatus == 0 && counter > 0 {
+			counter--
+			time.Sleep(time.Second)
+		}
 	}
 }
 //启动一个交易平台
 var systemStatus *int
-func NormalStart(exc api.API, exchangeCfg SExchange, stat *int) {
+
+func StartDouble(exc api.API, exchangeCfg SExchange, stat *int) {
 
 	Printf("[%s] 启动%s bot\n", TimeNow(), exc.GetExchangeName())
 	systemStatus = stat
 	exchange = exc
 	config = exchangeCfg
-	//buyOrderQueue = list.New()
+
 	go showROIBalance()
 	go whileBuying()
 	go updateOrderStatus()
@@ -218,6 +234,7 @@ func NormalStart(exc api.API, exchangeCfg SExchange, stat *int) {
 			}
 			price:=ticker.Last
 
+			/*
 			depth, err:= exchange.GetDepth(50, pair)
 			if err == nil {
 
@@ -241,6 +258,7 @@ func NormalStart(exc api.API, exchangeCfg SExchange, stat *int) {
 				}
 				avBidPrice = avBidPrice / avBidAmount
 			}
+			*/
 
 			//askPrice := price * (1 + config.RoiRate)
 			bidPrice := price * (1 - config.RoiRate)
@@ -263,15 +281,23 @@ func NormalStart(exc api.API, exchangeCfg SExchange, stat *int) {
 				Printf("buy one put order failed, err: %s\n", err.Error())
 			}else {
 				currency := api.Currency{coin.Name, ""}
-				orderInfo := OrderInfo{buyOrder.OrderID, api.ToFloat64(strBidPrice), api.ToFloat64(strBidAmount), ORDERWAITING, currency}
+				orderInfo := OrderInfo{buyOrder.OrderID, api.ToFloat64(strBidPrice),
+				api.ToFloat64(strBidAmount), ORDERWAITING, currency, api.BUY}
 				orderList[buyOrder.OrderID] = orderInfo
 				orderMap[buyOrder.OrderID] = 0 //先设置为0
+
+				Printf("[%s] [%s] buy order, orderpair(%d:-), price:%s, amount:%s\n",
+					TimeNow(), coin.Name, buyOrder.OrderID, strBidPrice, strBidAmount)
 			}
 
 		}
 
 		//每分钟进行一次买入/卖出操作
-		time.Sleep(tradeFrequency * time.Minute)
+		counter := tradeFrequency * 60
+		for *systemStatus == 0 && counter > 0{
+			counter--
+			time.Sleep(time.Second)
+		}
 
 	}
 

@@ -33,7 +33,7 @@ type SExchange struct {
 	TimeoutSellOrder int `xml:"timeoutSellOrder"` //second
 	Coins         SCoins  `xml:"coins"`
 	MaxBotNum     int     `xml:"maxBotNum"`
-	Mode     int 	`xml:"mode"`
+	Mode     int 	`xml:"mode"` //
 	BotTimeSpan int `xml:"botTimeSpan"` //second
 	WaitingQueue int `xml:"waitingQueue"`
 	FreeUseQueue int `xml:"freeUseQueue"`
@@ -70,6 +70,7 @@ type OrderInfo struct {
 	Amount float64
 	Status int //0-finished,1-waiting,2-cancel
 	Currency api.Currency
+	Side int //api
 }
 
 type PriceInfo struct {

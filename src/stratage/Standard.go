@@ -1,26 +1,14 @@
-package main
+package stratage
 
 import (
-	api "./api"
-	"./api/okcoin"
-	"./api/zb"
-	"./stratage"
-	. "./common"
-	"errors"
 	. "fmt"
-	"math/rand"
-	"net/http"
+	api "../api"
 	"time"
-
-	"flag"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
+	. "../common"
 	"math"
+	"errors"
+	"math/rand"
 )
-
-var systemExit bool = false
 
 
 type Bot struct {
@@ -345,7 +333,7 @@ func Start(botID int, exchangeCfg SExchange) {
 	//orderMap := make(map[string]string) //记录所有成交对
 	var updateTimer = 0
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for systemExit == false {
+	for *systemStatus == 0{
 
 		time.Sleep(3539 * time.Millisecond)
 		//TODO 计算收益
@@ -391,9 +379,9 @@ func Start(botID int, exchangeCfg SExchange) {
 				if cerr == nil {
 					Printf("[%s] [%s %s-USDT-bot %d] couple (buy-sell),orderid:(%d-%d), price:(%.4f,%.4f), amount:(%.4f,%.4f), rate:%.4f %%\n",
 						TimeNow(), bot.Exchange.GetExchangeName(), bot.Name, bot.ID,
-							latestOrder.OrderID, currentOrder.OrderID,
+						latestOrder.OrderID, currentOrder.OrderID,
 						latestOrder.Price, currentOrder.Price,
-							latestOrder.Amount, currentOrder.Amount,
+						latestOrder.Amount, currentOrder.Amount,
 						100 * (currentOrder.Price - latestOrder.Price) / latestOrder.Price)
 
 					orderID = currentOrder.OrderID2 //Sprintf("%d", currentOrder.OrderID) //保存最新ID
@@ -407,7 +395,7 @@ func Start(botID int, exchangeCfg SExchange) {
 					//orderMap[latestOrder.OrderID2] = currentOrder.OrderID2
 					bot.OrderPair[latestOrder.OrderID] = currentOrder.OrderID
 
-					orderInfo := OrderInfo{currentOrder.Price, currentOrder.Amount,1}
+					orderInfo := OrderInfo{currentOrder.OrderID,currentOrder.Price, currentOrder.Amount,ORDERWAITING,bot.CurrencyPair.CurrencyA}
 					bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
 
 					//TODO TEST 交易完成一次，则退出
@@ -476,7 +464,7 @@ func Start(botID int, exchangeCfg SExchange) {
 					counterBuyin++
 					counterBuyinMoney += currentOrder.Price * currentOrder.Amount
 
-					orderInfo := OrderInfo{currentOrder.Price, currentOrder.Amount,1}
+					orderInfo := OrderInfo{currentOrder.OrderID, currentOrder.Price, currentOrder.Amount,ORDERWAITING, bot.CurrencyPair.CurrencyA}
 					bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
 				}
 
@@ -575,7 +563,7 @@ func Start(botID int, exchangeCfg SExchange) {
 				counterBuyin++
 				counterBuyinMoney += currentOrder.Price * currentOrder.Amount
 
-				orderInfo := OrderInfo{currentOrder.Price, currentOrder.Amount,1}
+				orderInfo := OrderInfo{currentOrder.OrderID, currentOrder.Price, currentOrder.Amount,ORDERWAITING, bot.CurrencyPair.CurrencyA}
 				bot.OrderList[currentOrder.OrderID] = orderInfo //insert one new
 
 			} else {
@@ -677,7 +665,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 	currBotID := 0
 	timer := 0
 
-	for systemExit == false {
+	for *systemStatus == 0{
 
 		//满足一定条件，启动一个新的bot
 		var roiWell bool = false
@@ -712,10 +700,10 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 
 
 //启动一个交易平台
-func startExchange(exchange api.API, exchangeCfg SExchange) {
+func StartStandard(exchange api.API, exchangeCfg SExchange, stat *int)  {
 
 	Printf("[%s] 启动%s bot\n", TimeNow(), exchange.GetExchangeName())
-
+	systemStatus = stat
 	balanceBeginUSDT:= api.ToFloat64(GetBalance(exchange, &api.USDT))//USDT余额
 	var balanceBeginCoins float64 = 0
 
@@ -746,7 +734,7 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 	}
 
 	timer:=125 //开始就打印一次
-	for systemExit == false { //主线程等待
+	for *systemStatus == 0 { //主线程等待
 
 		if timer  >= 120 { //10分钟打印一次
 			//获取盈利情况//计算收益
@@ -761,7 +749,7 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 				coinNames = coinNames + "-" + coin.Name
 				balanceCurrentCoins += api.ToFloat64(GetBalance(exchange, &api.Currency{coin.Name,""}))
 			}
-			rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT)
+			rate := (balanceCurrentUSDT + balanceCurrentCoins - balanceBeginCoins - balanceBeginUSDT) / (balanceBeginCoins + balanceBeginUSDT + 0.0000001)
 			rate = rate * 100
 
 			pairCounter:=0
@@ -820,91 +808,3 @@ func startExchange(exchange api.API, exchangeCfg SExchange) {
 
 }
 
-//交易所监测
-func exchangeObserve(exchange api.API, exchangeCfg SExchange) {
-	stratage.Start(exchange, exchangeCfg)
-}
-
-
-//程序退出
-func ExitFunc() {
-
-	systemExit = true
-
-	time.Sleep(10 * time.Second)
-
-	os.Exit(0)
-}
-
-//botx入口
-func main() {
-
-	configFile := flag.String("c", "../conf/config.xml", "load config file")
-	model := flag.String("m","small","exchange model (default in small model)")
-	flag.Parse()
-	config, err := LoadConfigure(*configFile)
-
-	if err != nil {
-		Printf("[%s] 加载配置文件失败，系统正在退出\n", TimeNow())
-		return
-	}
-	//创建监听退出chan
-	c := make(chan os.Signal)
-	//监听指定信号 ctrl+c kill
-	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1, syscall.SIGUSR2)
-	go func() {
-		for s := range c {
-			switch s {
-			case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-				Printf("[%s] 接收到退出信号，即将退出\n", TimeNow())
-				ExitFunc()
-				break
-			default:
-				Printf("[%s] 接收到sys信号，即将退出\n", TimeNow())
-				break
-			}
-			time.Sleep(time.Second)
-		}
-	}()
-
-	for _, v := range config.Exchanges.Exchange {
-
-		var exchange api.API
-		switch strings.ToUpper(v.Name) {
-		case "ZB":
-			Printf("[%s] zb\n", TimeNow())
-			exchange = zb.New(http.DefaultClient,
-				v.ApiKey, v.SecretKey)
-			break
-		case "OKEX":
-			Printf("[%s] ok\n", TimeNow())
-			exchange = okcoin.NewOKExSpot(http.DefaultClient, v.ApiKey, v.SecretKey)
-			break
-		default:
-			break
-		}
-
-		if v.Enable == true {
-			switch strings.ToUpper(*model) {
-			case "SMALL":
-				go startExchange(exchange, v)
-				break;
-			case "ALLIN":
-				go exchangeObserve(exchange, v)
-				break;
-			}
-
-		} else {
-			Printf("[%s] %s not enable\n", TimeNow(), v.Name)
-		}
-	}
-
-	for systemExit == false { //主线程等待
-
-		time.Sleep(5 * time.Second)
-
-	}
-
-	Printf("[%s] 系统正在退出\n", TimeNow())
-
-}

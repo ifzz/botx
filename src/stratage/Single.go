@@ -53,7 +53,7 @@ func observing(exchange api.API, pair api.CurrencyPair, shareObj *CurrencyRealTi
 
 	}
 }
-func Start(exchange api.API, exchangeCfg SExchange)  {
+func StartSingle(exchange api.API, exchangeCfg SExchange, stat *int)  {
 	//检查整体行情，确定一个可买入货币
 
 	var shareObjs [1000]CurrencyRealTimeStatus
@@ -65,7 +65,8 @@ func Start(exchange api.API, exchangeCfg SExchange)  {
 			idx++
 		}
 	}
-	for {
+	for *systemStatus == 0{
+
 		//检查各个数字货币的状态
 		for i:=0;i<idx;i++ {
 			Printf("%s",shareObjs[i].Speed)

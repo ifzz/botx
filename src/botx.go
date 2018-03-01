@@ -19,14 +19,16 @@ import (
 
 var systemStatus int = 0
 func exitNormal()  {
+
 	systemStatus = 1
+	time.Sleep(10 * time.Second)
 	os.Exit(0)
 }
 //botx入口
 func main() {
 
 	configFile := flag.String("c", "../conf/config.xml", "load config file")
-	model := flag.String("m","small","exchange model (default in small model)")
+	model := flag.String("m","standard","exchange model (default in standard model,standard/observe/double)")
 	flag.Parse()
 	config, err := LoadConfigure(*configFile)
 
@@ -70,12 +72,16 @@ func main() {
 		}
 
 		if v.Enable == true {
+			Printf("[%s] %s mode\n", TimeNow(), *model)
 			switch strings.ToUpper(*model) {
-			case "SMALL":
-				 stratage.NormalStart(exchange, v, &systemStatus)
+			case "DOUBLE":
+
+				 stratage.StartDouble(exchange, v, &systemStatus)
 				break;
-			case "ALLIN":
-				go stratage.Start(exchange, v)
+			case "STANDARD":
+				go stratage.StartStandard(exchange, v, &systemStatus)
+			case "SINGLE":
+				go stratage.StartSingle(exchange, v, &systemStatus)
 				break;
 			}
 
