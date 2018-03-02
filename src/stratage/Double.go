@@ -11,6 +11,7 @@ var exchange api.API
 var config SExchange
 var orderList map[int] OrderInfo //存储所有的order
 var orderMap map[int] int //买-卖订单倒排列表
+var systemStatus *int
 
 func whileBuying()  {
 
@@ -42,13 +43,7 @@ func whileBuying()  {
 					//可以卖出
 					pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
 
-					ticker,err := exchange.GetTicker(pair)
-					price := buyOrder.Price * (1 + config.RoiRate * 2)
-					if err == nil {
-						if price < ticker.Last {
-							price = ticker.Last
-						}
-					}
+					price := getSellPrice(buyOrder.Price,pair)
 
 					amount := buyOrder.Amount
 					strPrice := Sprintf(coin.PriceDecimel,price)
@@ -222,9 +217,55 @@ func showROIBalance()  {
 		}
 	}
 }
-//启动一个交易平台
-var systemStatus *int
 
+func getSellPrice(buyprice float64, pair api.CurrencyPair) float64 {
+
+	price := buyprice * (1 + config.RoiRate * 2)
+	depth, err:= exchange.GetDepth(50, pair)
+	if err == nil {
+		avAskPrice := 0.0
+		avAskAmount := 0.0
+
+		//卖方深度
+		for _, ask := range depth.AskList {
+			avAskPrice += ask.Price * ask.Amount
+			avAskAmount += ask.Amount
+		}
+		avAskPrice = avAskPrice / avAskAmount
+
+		if depth.AskList[1].Price > price {
+			price = depth.AskList[1].Price
+		}
+	}
+	return price
+}
+func getBuyPrice(pair api.CurrencyPair) float64 {
+
+	var price float64 =0
+	depth, err:= exchange.GetDepth(50, pair)
+	if err == nil {
+
+		avBidPrice := 0.0
+		avBidAmount := 0.0
+
+		//买方深度
+		for _, bid := range depth.BidList {
+			avBidPrice += bid.Price * bid.Amount
+			avBidAmount += bid.Amount
+		}
+		avBidPrice = avBidPrice / avBidAmount
+
+		price = depth.BidList[1].Price *  (1 - config.RoiRate)
+
+		if price < avBidPrice * (1 + config.RoiRate) {
+			price = avBidPrice * (1 + config.RoiRate)
+		}
+	}
+
+	return price
+
+}
+//启动一个交易平台
 func StartDouble(exc api.API, exchangeCfg SExchange, stat *int) {
 
 	Printf("[%s] 启动%s bot\n", TimeNow(), exc.GetExchangeName())
@@ -251,46 +292,16 @@ func StartDouble(exc api.API, exchangeCfg SExchange, stat *int) {
 				continue
 			}
 			pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
-			ticker,err := exchange.GetTicker(pair)
-			if err !=nil {
-				Printf("err:\n", err.Error())
+
+			bidPrice := getBuyPrice(pair)
+			if bidPrice == 0 {
 				continue
 			}
-			price:=ticker.Last
+			availableMoney := usdtAmount / float64(exchangeCfg.AverageNum)
 
-			/*
-			depth, err:= exchange.GetDepth(50, pair)
-			if err == nil {
-
-				avAskPrice := 0.0
-				avAskAmount := 0.0
-				avBidPrice := 0.0
-				avBidAmount := 0.0
-				cnt := 0
-				//卖方深度
-				for _, ask := range depth.AskList {
-					avAskPrice += ask.Price * ask.Amount
-					avAskAmount += ask.Amount
-					cnt++
-				}
-				avAskPrice = avAskPrice / avAskAmount
-
-				//买方深度
-				for _, bid := range depth.BidList {
-					avBidPrice += bid.Price * bid.Amount
-					avBidAmount += bid.Amount
-				}
-				avBidPrice = avBidPrice / avBidAmount
-			}
-			*/
-
-			//askPrice := price * (1 + config.RoiRate)
-			bidPrice := price * (1 - config.RoiRate)
-			//askAmount := config.BuyLimitMoney / bidPrice
-			bidAmount := config.BuyLimitMoney / bidPrice //买卖的量保持一致
+			bidAmount := availableMoney / bidPrice //买卖的量保持一致
 			if coin.LimitAmount > 0 {
 				//按量购买
-				//askAmount = coin.LimitAmount
 				bidAmount = coin.LimitAmount
 			}
 
