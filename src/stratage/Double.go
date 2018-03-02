@@ -236,12 +236,14 @@ func getSellPrice(buyprice float64, pair api.CurrencyPair) float64 {
 		if depth.AskList[1].Price > price {
 			price = depth.AskList[1].Price
 		}
+	}else {
+		Printf("%s failed get sell price depth:%s\n", TimeNow(), err.Error())
 	}
 	return price
 }
 func getBuyPrice(pair api.CurrencyPair) float64 {
 
-	var price float64 =0
+	var price float64 = 0
 	depth, err:= exchange.GetDepth(50, pair)
 	if err == nil {
 
@@ -260,6 +262,8 @@ func getBuyPrice(pair api.CurrencyPair) float64 {
 		if price < avBidPrice * (1 + config.RoiRate) {
 			price = avBidPrice * (1 + config.RoiRate)
 		}
+	}else {
+		Printf("%s failed get buy depth:%s\n", TimeNow(), err.Error())
 	}
 
 	return price
