@@ -165,7 +165,7 @@ func showROIBalance()  {
 				finishedBuyOrder++
 			}
 			if sellOrder.Status == ORDERFINISHED {
-				finishedOrder ++
+				finishedSellOrder ++
 			}
 		}
 
