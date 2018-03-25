@@ -4,12 +4,12 @@ import (
 	"./api"
 	"./api/okcoin"
 	"./api/zb"
-	"./stratage"
+	"./stratagy"
+	"./stratagy/bigstep"
 	. "./common"
 	. "fmt"
 	"net/http"
 	"time"
-
 	"flag"
 	"os"
 	"os/signal"
@@ -28,7 +28,7 @@ func exitNormal()  {
 func main() {
 
 	configFile := flag.String("c", "../conf/config.xml", "load config file")
-	model := flag.String("m","standard","exchange model (default in standard model,standard/observe/double)")
+	//model := flag.String("m","standard","exchange model (default in standard model,standard/observe/double)")
 	flag.Parse()
 	config, err := LoadConfigure(*configFile)
 
@@ -72,10 +72,9 @@ func main() {
 		}
 
 		if v.Enable == true {
-			Printf("[%s] %s mode\n", TimeNow(), *model)
-			switch strings.ToUpper(*model) {
+			Printf("[%s] %s mode\n", TimeNow(), config.Strategy)
+			switch strings.ToUpper(config.Strategy) {
 			case "DOUBLE":
-
 				 stratage.StartDouble(exchange, v, &systemStatus)
 				break;
 			case "STANDARD":
@@ -84,7 +83,8 @@ func main() {
 				go stratage.StartSingle(exchange, v, &systemStatus)
 			case "ALLIN":
 				go stratage.StartAllin(exchange, v, &systemStatus)
-				break;
+			case "BIGSTEP":
+				go bigstep.Start(exchange,v,&systemStatus)
 			}
 
 		} else {

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config version="1">
     <system>botx</system>
+    <strategy>standard</strategy>
     <exchanges>
         <exchange>
             <enable>1</enable>

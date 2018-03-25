@@ -13,6 +13,7 @@ import (
 type Configure struct {
 	XMLName   xml.Name   `xml:"config"`
 	System    string     `xml:"system"`
+	Strategy   string `xml:"strategy"`
 	Exchanges SExchanges `xml:"exchanges"`
 }
 type SExchanges struct {
