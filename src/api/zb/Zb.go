@@ -18,6 +18,7 @@ const (
 	MARKET_URL    = "http://api.bitkk.com/data/v1/"
 	TICKER_API    = "ticker?market=%s"
 	DEPTH_API     = "depth?market=%s&size=%d"
+	KLINE_API 	  = "kline?market=%s&type=%s"
 
 	TRADE_URL                 = "https://trade.bitkk.com/api/"
 	GET_ACCOUNT_API           = "getAccountInfo"
@@ -394,56 +395,41 @@ func (zb *Zb) GetOrderHistorys(currency CurrencyPair, currentPage, pageSize int)
 
 func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since string) ([]Kline, error) {
 
-	params := url.Values{}
-	params.Set("method", "kline")
-	params.Set("market", currency.ToSymbol("_"))
-	params.Set("type", period)
-
-
-	zb.buildPostForm(&params)
-
-	resp, err := HttpPostForm(zb.httpClient, TRADE_URL+GET_UNFINISHED_ORDERS_API, params)
+	resp, err := HttpGet(zb.httpClient, MARKET_URL+fmt.Sprintf(KLINE_API, currency.ToSymbol("_"), period))
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 
-	respstr := string(resp)
-	if strings.Contains(respstr, "\"code\":3001") {
-		log.Println(respstr)
-		return nil, nil
+	//log.Println(resp)
+	if resp["data"] == nil  {
+		return nil, errors.New("return data is nil")
 	}
+	data := resp["data"].([]interface{})
 
-	var klines [][]interface{}
-	err = json.Unmarshal(resp, &klines)
-	if err != nil {
-		log.Println(string(resp))
-		return nil, err
-	}
+
 	var klineRecords []Kline
+	for _, e := range data {
+		/*
+		1417536000000, 时间戳
+		2370.16, 开
+		2380, 高
+		2352, 低
+		2367.37, 收
+		17259.83 交易量
+		 */
+		var r Kline
+		ee := e.([]interface{})
 
-	for _, record := range klines {
-		r := Kline{}
-		for i, e := range record {
-			switch i {
-			case 0:
-				r.Timestamp = int64(e.(float64)) / 1000 //to unix timestramp
-			case 1:
-				r.Open,_ = strconv.ParseFloat(e.(string),64)
-				//fmt.Printf("xx %s, %.4f\n", e.(string), r.Open)
-			case 2:
-				r.High ,_ = strconv.ParseFloat(e.(string),64)
-			case 3:
-				r.Low ,_ = strconv.ParseFloat(e.(string),64)
-			case 4:
-				r.Close ,_ = strconv.ParseFloat(e.(string),64)
-			case 5:
-				r.Vol ,_ = strconv.ParseFloat(e.(string),64)
-			}
-		}
+		r.Timestamp = ee[0].(int64)
+		r.Open = ee[1].(float64)
+		r.High = ee[2].(float64)
+		r.Low = ee[3].(float64)
+		r.Close = ee[4].(float64)
+		r.Vol = ee[5].(float64)
+
 		klineRecords = append(klineRecords, r)
 	}
-
+	
 	return klineRecords, nil
 
 	/*
