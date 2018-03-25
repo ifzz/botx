@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"api"
 )
 
 const (
@@ -419,7 +420,7 @@ func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since int) ([
 		log.Println(err)
 		return nil, err
 	}
-
+	/*
 	var orders []Order
 	for _, v := range resps {
 		ordermap := v.(map[string]interface{})
@@ -428,6 +429,7 @@ func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since int) ([
 		}
 		klines = api.Kline{}
 	}
+	*/
 	return nil, nil
 }
 
