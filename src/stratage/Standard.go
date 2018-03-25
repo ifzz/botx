@@ -93,6 +93,8 @@ func calcBuyPrice(exchange api.API, pair api.CurrencyPair, roiRate float64) floa
 	}
 
 	price = ticker.Buy
+	price += 0.01
+	return price
 	time.Sleep(171* time.Millisecond)
 	depth, err:= exchange.GetDepth(50, pair)
 	if err == nil {
