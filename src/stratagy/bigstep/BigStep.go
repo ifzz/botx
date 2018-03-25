@@ -56,6 +56,7 @@ func Start(exc api.API, exchangeCfg SExchange, stat *int) {
 	exchange = exc
 	config = exchangeCfg
 
+	/*
 	orderList = make(map[int]OrderInfo)
 	orderMap = make(map[int]int)
 
@@ -113,4 +114,5 @@ func Start(exc api.API, exchangeCfg SExchange, stat *int) {
 			time.Sleep(time.Second)
 		}
 	}
+	*/
 }

@@ -415,12 +415,38 @@ func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since string)
 		return nil, nil
 	}
 
-	var resps []interface{}
-	err = json.Unmarshal(resp, &resps)
+	var klines [][]interface{}
+	err = json.Unmarshal(resp, &klines)
 	if err != nil {
-		log.Println(err)
+		log.Println(string(resp))
 		return nil, err
 	}
+	var klineRecords []Kline
+
+	for _, record := range klines {
+		r := Kline{}
+		for i, e := range record {
+			switch i {
+			case 0:
+				r.Timestamp = int64(e.(float64)) / 1000 //to unix timestramp
+			case 1:
+				r.Open,_ = strconv.ParseFloat(e.(string),64)
+				//fmt.Printf("xx %s, %.4f\n", e.(string), r.Open)
+			case 2:
+				r.High ,_ = strconv.ParseFloat(e.(string),64)
+			case 3:
+				r.Low ,_ = strconv.ParseFloat(e.(string),64)
+			case 4:
+				r.Close ,_ = strconv.ParseFloat(e.(string),64)
+			case 5:
+				r.Vol ,_ = strconv.ParseFloat(e.(string),64)
+			}
+		}
+		klineRecords = append(klineRecords, r)
+	}
+
+	return klineRecords, nil
+
 	/*
 	var orders []Order
 	for _, v := range resps {

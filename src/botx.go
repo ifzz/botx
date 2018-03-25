@@ -2,9 +2,7 @@ package main
 
 import (
 	"./api"
-	"./api/okcoin"
 	"./api/zb"
-	"./stratagy/"
 	"./stratagy/standard"
 	"./stratagy/bigstep"
 	"./stratagy/allin"
@@ -75,11 +73,11 @@ func main() {
 					Printf("%s %s %s %s\n", kline.Open, kline.Close, kline.High, kline.Low)
 				}
 			}
-			return 
+			return
 			break
 		case "OKEX":
 			Printf("[%s] ok\n", TimeNow())
-			exchange = okcoin.NewOKExSpot(http.DefaultClient, v.ApiKey, v.SecretKey)
+			//exchange = okcoin.NewOKExSpot(http.DefaultClient, v.ApiKey, v.SecretKey)
 			break
 		default:
 			break
