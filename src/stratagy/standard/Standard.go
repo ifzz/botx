@@ -1,10 +1,10 @@
-package stratage
+package standard
 
 import (
 	. "fmt"
-	api "../api"
+	api "../../api"
 	"time"
-	. "../common"
+	. "../../common"
 	"math"
 	"errors"
 	"math/rand"
@@ -317,7 +317,7 @@ func getBot(botID int) *Bot {
 }
 
 ///程序启动一个bot
-func Start(botID int, exchangeCfg SExchange) {
+func start(botID int, exchangeCfg SExchange) {
 
 	bot:= getBot(botID)
 	Printf("[%s] [%s %s-USDT-bot %d] start a new bot \n",
@@ -685,7 +685,7 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 				bots[currBotID].StartTime = time.Now() //启动时间
 				bots[currBotID].OrderList = make(map[int] OrderInfo)
 				bots[currBotID].OrderPair = make(map[int] int)
-				go Start(currBotID, exchangeCfg)
+				go start(currBotID, exchangeCfg)
 				currBotID++
 				botCount++
 			}
@@ -703,9 +703,9 @@ func startBots(bot Bot, exchangeCfg SExchange) {
 
 }
 
-
+var systemStatus *int
 //启动一个交易平台
-func StartStandard(exchange api.API, exchangeCfg SExchange, stat *int)  {
+func Start(exchange api.API, exchangeCfg SExchange, stat *int)  {
 
 	Printf("[%s] 启动%s bot\n", TimeNow(), exchange.GetExchangeName())
 	systemStatus = stat

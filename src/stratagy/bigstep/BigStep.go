@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+var systemStatus *int
+var exchange api.API
+var config SExchange
+
 func observe(exchange api.API)  {
 
 	acc, err := exchange.GetAccount()

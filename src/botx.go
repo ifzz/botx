@@ -4,8 +4,12 @@ import (
 	"./api"
 	"./api/okcoin"
 	"./api/zb"
-	"./stratagy"
+	"./stratagy/"
+	"./stratagy/standard"
 	"./stratagy/bigstep"
+	"./stratagy/allin"
+	"./stratagy/double"
+	"./stratagy/single"
 	. "./common"
 	. "fmt"
 	"net/http"
@@ -75,14 +79,14 @@ func main() {
 			Printf("[%s] %s mode\n", TimeNow(), config.Strategy)
 			switch strings.ToUpper(config.Strategy) {
 			case "DOUBLE":
-				 stratage.StartDouble(exchange, v, &systemStatus)
+				 go double.Start(exchange, v, &systemStatus)
 				break;
 			case "STANDARD":
-				go stratage.StartStandard(exchange, v, &systemStatus)
+				go standard.Start(exchange, v, &systemStatus)
 			case "SINGLE":
-				go stratage.StartSingle(exchange, v, &systemStatus)
+				go single.Start(exchange, v, &systemStatus)
 			case "ALLIN":
-				go stratage.StartAllin(exchange, v, &systemStatus)
+				go allin.Start(exchange, v, &systemStatus)
 			case "BIGSTEP":
 				go bigstep.Start(exchange,v,&systemStatus)
 			}

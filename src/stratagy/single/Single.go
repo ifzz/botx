@@ -1,11 +1,13 @@
-package stratage
+package single
 
 import (
 	. "fmt"
-	api "../api"
+	api "../../api"
 	"time"
-	. "../common"
+	. "../../common"
 )
+
+var systemStatus *int
 
 type CurrencyRealTimeStatus struct  {
 	Enable bool //是否可以购买，是一个综合考虑的结论
@@ -53,7 +55,7 @@ func observing(exchange api.API, pair api.CurrencyPair, shareObj *CurrencyRealTi
 
 	}
 }
-func StartSingle(exchange api.API, exchangeCfg SExchange, stat *int)  {
+func Start(exchange api.API, exchangeCfg SExchange, stat *int)  {
 	//检查整体行情，确定一个可买入货币
 
 	var shareObjs [1000]CurrencyRealTimeStatus

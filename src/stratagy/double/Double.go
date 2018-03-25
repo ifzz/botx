@@ -1,11 +1,12 @@
-package stratage
+package double
 
 import (
-	api "../api"
+	api "../../api"
 	. "fmt"
-	. "../common"
+	. "../../common"
 	"time"
 )
+
 
 var exchange api.API
 var config SExchange
@@ -278,7 +279,7 @@ func getBuyPrice(pair api.CurrencyPair) float64 {
 
 }
 //启动一个交易平台
-func StartDouble(exc api.API, exchangeCfg SExchange, stat *int) {
+func Start(exc api.API, exchangeCfg SExchange, stat *int) {
 
 	Printf("[%s] 启动%s bot\n", TimeNow(), exc.GetExchangeName())
 	systemStatus = stat

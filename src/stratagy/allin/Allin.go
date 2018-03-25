@@ -1,11 +1,15 @@
-package stratage
+package allin
 
 import (
-	api "../api"
+	api "../../api"
 	. "fmt"
-	. "../common"
+	. "../../common"
 	"time"
 )
+
+var systemStatus *int
+var exchange api.API
+var config SExchange
 
 func observe(exchange api.API)  {
 
@@ -40,7 +44,7 @@ func observe(exchange api.API)  {
 	}
 
 }
-func StartAllin(exc api.API, exchangeCfg SExchange, stat *int) {
+func Start(exc api.API, exchangeCfg SExchange, stat *int) {
 
 	Printf("[%s] 启动%s allin bot\n", TimeNow(), exc.GetExchangeName())
 	systemStatus = stat
