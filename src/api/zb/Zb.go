@@ -11,15 +11,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"api"
 )
 
 const (
 	EXCHANGE_NAME = "zb.com"
-	MARKET_URL    = "http://api.zb.com/data/v1/"
+	MARKET_URL    = "http://api.bitkk.com/data/v1/"
 	TICKER_API    = "ticker?market=%s"
 	DEPTH_API     = "depth?market=%s&size=%d"
 
-	TRADE_URL                 = "https://trade.zb.com/api/"
+	TRADE_URL                 = "https://trade.bitkk.com/api/"
 	GET_ACCOUNT_API           = "getAccountInfo"
 	GET_ORDER_API             = "getOrder"
 	GET_UNFINISHED_ORDERS_API = "getUnfinishedOrdersIgnoreTradeType"
@@ -393,6 +394,41 @@ func (zb *Zb) GetOrderHistorys(currency CurrencyPair, currentPage, pageSize int)
 }
 
 func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since int) ([]Kline, error) {
+
+	params := url.Values{}
+	params.Set("method", "kline")
+	params.Set("market", currency.ToSymbol("_"))
+	params.Set("type", fmt.Sprintf("%d",period))
+
+	zb.buildPostForm(&params)
+
+	resp, err := HttpPostForm(zb.httpClient, TRADE_URL+GET_UNFINISHED_ORDERS_API, params)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	respstr := string(resp)
+	if strings.Contains(respstr, "\"code\":3001") {
+		log.Println(respstr)
+		return nil, nil
+	}
+
+	var resps []interface{}
+	err = json.Unmarshal(resp, &resps)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	var orders []Order
+	for _, v := range resps {
+		ordermap := v.(map[string]interface{})
+		if ordermap == nil {
+			continue
+		}
+		klines = api.Kline{}
+	}
 	return nil, nil
 }
 

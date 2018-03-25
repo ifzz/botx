@@ -82,6 +82,8 @@ func main() {
 				go stratage.StartStandard(exchange, v, &systemStatus)
 			case "SINGLE":
 				go stratage.StartSingle(exchange, v, &systemStatus)
+			case "ALLIN":
+				go stratage.StartAllin(exchange, v, &systemStatus)
 				break;
 			}
 

@@ -37,6 +37,12 @@ func whileBuying()  {
 				if buyOrder.Status == ORDERCANCEL {//买入单已经取消
 					continue
 				}
+
+				//2018/03/05新策略
+				if buyOrder.Status != ORDERFINISHED {//买入单未完成
+					continue
+				}
+
 				coinAvAmount := GetAvailableAmount(exchange, &api.Currency{coin.Name,""})
 
 				if coinAvAmount >= buyOrder.Amount {
@@ -144,6 +150,15 @@ func showROIBalance()  {
 		for idBuy, idSell := range orderMap {
 			buyOrder := orderList[idBuy]
 			sellOrder := orderList[idSell]
+			if buyOrder.Status == ORDERFINISHED {
+				finishedBuyOrder++
+				finishedOrder++
+			}
+			if sellOrder.Status == ORDERFINISHED {
+				finishedSellOrder ++
+				finishedOrder++
+			}
+
 			if buyOrder.Status == ORDERFINISHED && sellOrder.Status == ORDERFINISHED {
 				totalFinishedPair++
 				continue
@@ -158,15 +173,6 @@ func showROIBalance()  {
 				cancelOrder++
 			}
 
-			if buyOrder.Status == ORDERFINISHED || sellOrder.Status == ORDERFINISHED {
-				finishedOrder++
-			}
-			if buyOrder.Status == ORDERFINISHED {
-				finishedBuyOrder++
-			}
-			if sellOrder.Status == ORDERFINISHED {
-				finishedSellOrder ++
-			}
 		}
 
 		//获取盈利情况//计算收益
@@ -257,7 +263,9 @@ func getBuyPrice(pair api.CurrencyPair) float64 {
 		}
 		avBidPrice = avBidPrice / avBidAmount
 
-		price = depth.BidList[1].Price *  (1 - config.RoiRate)
+		//price = depth.BidList[1].Price *  (1 - config.RoiRate)
+		//201803/05 新策略，按照第一出嫁买入
+		price = depth.BidList[0].Price
 
 		if price < avBidPrice * (1 + config.RoiRate) {
 			price = avBidPrice * (1 + config.RoiRate)
@@ -285,6 +293,17 @@ func StartDouble(exc api.API, exchangeCfg SExchange, stat *int) {
 	go updateOrderStatus()
 
 	tradeFrequency := time.Duration(config.TradeFrequency)
+
+	var initPrice map[string] float64 = make(map[string] float64)
+	for _, coin:= range config.Coins.Coin {
+		if coin.Enable == false {
+			continue
+		}
+		pair := api.CurrencyPair{api.Currency{coin.Name, ""}, api.USDT}
+
+		initPrice[coin.Name] = getBuyPrice(pair)
+	}
+
 	for *systemStatus == 0{
 
 		for _, coin:= range config.Coins.Coin {

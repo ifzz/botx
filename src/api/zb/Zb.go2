@@ -379,6 +379,7 @@ func (zb *Zb) GetOrderHistorys(currency CurrencyPair, currentPage, pageSize int)
 }
 
 func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since int) ([]Kline, error) {
+
 	return nil, nil
 }
 
