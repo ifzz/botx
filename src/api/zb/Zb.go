@@ -420,7 +420,7 @@ func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since string)
 		var r Kline
 		ee := e.([]interface{})
 
-		r.Timestamp = ee[0].(int64)
+		//r.Timestamp = ee[0].(int64)
 		r.Open = ee[1].(float64)
 		r.High = ee[2].(float64)
 		r.Low = ee[3].(float64)
@@ -429,7 +429,7 @@ func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since string)
 
 		klineRecords = append(klineRecords, r)
 	}
-	
+
 	return klineRecords, nil
 
 	/*

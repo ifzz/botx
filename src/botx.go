@@ -70,7 +70,7 @@ func main() {
 				Printf("err: %s\n", err.Error())
 			}else {
 				for _,kline := range klines {
-					Printf("%s %s %s %s\n", kline.Open, kline.Close, kline.High, kline.Low)
+					Printf("%.4f %.4f %.4f %.4f %.4f\n", kline.Open, kline.Close, kline.High, kline.Low, kline.Vol)
 				}
 			}
 			return
