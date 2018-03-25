@@ -392,12 +392,14 @@ func (zb *Zb) GetOrderHistorys(currency CurrencyPair, currentPage, pageSize int)
 	return nil, nil
 }
 
-func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since int) ([]Kline, error) {
+func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since string) ([]Kline, error) {
 
 	params := url.Values{}
 	params.Set("method", "kline")
 	params.Set("market", currency.ToSymbol("_"))
-	params.Set("type", fmt.Sprintf("%d",period))
+	params.Set("type", period)
+	params.Set("since", since)
+	params.Set("size", size)
 
 	zb.buildPostForm(&params)
 

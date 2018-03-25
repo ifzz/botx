@@ -31,6 +31,7 @@ func exitNormal()  {
 //botx入口
 func main() {
 
+
 	configFile := flag.String("c", "../conf/config.xml", "load config file")
 	//model := flag.String("m","standard","exchange model (default in standard model,standard/observe/double)")
 	flag.Parse()
@@ -66,6 +67,15 @@ func main() {
 			Printf("[%s] zb\n", TimeNow())
 			exchange = zb.New(http.DefaultClient,
 				v.ApiKey, v.SecretKey)
+			klines,err := exchange.GetKlineRecords(api.BTC_USDT,"1min","1000","")
+			if err != nil {
+				Printf("err: %s\n", err.Error())
+			}else {
+				for _,kline := range klines {
+					Printf("%s %s %s %s\n", kline.Open, kline.Close, kline.High, kline.Low)
+				}
+			}
+			return 
 			break
 		case "OKEX":
 			Printf("[%s] ok\n", TimeNow())

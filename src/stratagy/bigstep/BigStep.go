@@ -1,5 +1,9 @@
 package bigstep
 
+/*
+	every single sell is over 10% or less 5%,
+	every single buy is less 5% or over 5%
+ */
 import (
 	api "../../api"
 	. "fmt"
