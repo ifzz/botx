@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config version="1">
     <system>botx</system>
-    <strategy>standard</strategy>
+    <strategy>bigstep</strategy>
     <exchanges>
         <exchange>
             <enable>1</enable>
@@ -21,7 +21,7 @@
             <tradeFrequency>5</tradeFrequency>
             <coins>
                 <coin>
-                    <enable>0</enable>
+                    <enable>1</enable>
                     <name>BTC</name>
                     <pair>BTC_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
@@ -29,7 +29,7 @@
                     <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
-                    <enable>0</enable>
+                    <enable>1</enable>
                     <name>ETH</name>
                     <pair>ETH_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
@@ -37,7 +37,7 @@
                     <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
-                    <enable>0</enable>
+                    <enable>1</enable>
                     <name>ETC</name>
                     <pair>ETC_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
@@ -45,7 +45,7 @@
                     <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
-                    <enable>0</enable>
+                    <enable>1</enable>
                     <name>BCC</name>
                     <pair>BCC_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
@@ -53,10 +53,162 @@
                     <limitAmount>0.001</limitAmount>
                 </coin>
                 <coin>
-                    <enable>0</enable>
+                    <enable>1</enable>
                     <name>HSR</name>
                     <pair>HSR_USDT</pair>
                     <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.2f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>LTC</name>
+                    <pair>LTC_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>ZB</name>
+                    <pair>ZB_USDT</pair>
+                    <priceDecimel>%.4f</priceDecimel>
+                    <amountDecimel>%.2f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>UBTC</name>
+                    <pair>UBTC_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>BTS</name>
+                    <pair>BTS_USDT</pair>
+                    <priceDecimel>%.4f</priceDecimel>
+                    <amountDecimel>%.0f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>EOS</name>
+                    <pair>EOS_USDT</pair>
+                    <priceDecimel>%.3f</priceDecimel>
+                    <amountDecimel>%.1f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>QTUM</name>
+                    <pair>QTUM_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.2f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>XRP</name>
+                    <pair>XRP_USDT</pair>
+                    <priceDecimel>%.4f</priceDecimel>
+                    <amountDecimel>%.0f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>BCD</name>
+                    <pair>BCD_USDT</pair>
+                    <priceDecimel>%.3f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>DASH</name>
+                    <pair>DASH_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>SBTC</name>
+                    <pair>SBTC_USDT</pair>
+                    <priceDecimel>%.2f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>INK</name>
+                    <pair>INK_USDT</pair>
+                    <priceDecimel>%.5f</priceDecimel>
+                    <amountDecimel>%.1f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>TV</name>
+                    <pair>TV_USDT</pair>
+                    <priceDecimel>%.5f</priceDecimel>
+                    <amountDecimel>%.1f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>BCX</name>
+                    <pair>BCX_USDT</pair>
+                    <priceDecimel>%.5f</priceDecimel>
+                    <amountDecimel>%.0f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>BTH</name>
+                    <pair>BTH_USDT</pair>
+                    <priceDecimel>%.3f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>BCW</name>
+                    <pair>BCW_USDT</pair>
+                    <priceDecimel>%.4f</priceDecimel>
+                    <amountDecimel>%.3f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>ENT</name>
+                    <pair>ENT_USDT</pair>
+                    <priceDecimel>%.5f</priceDecimel>
+                    <amountDecimel>%.1f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>CHAT</name>
+                    <pair>CHAT_USDT</pair>
+                    <priceDecimel>%.5f</priceDecimel>
+                    <amountDecimel>%.1f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>BAT</name>
+                    <pair>BAT_USDT</pair>
+                    <priceDecimel>%.4f</priceDecimel>
+                    <amountDecimel>%.1f</amountDecimel>
+                    <limitAmount>0.001</limitAmount>
+                </coin>
+                <coin>
+                    <enable>1</enable>
+                    <name>HOTC</name>
+                    <pair>HOTC_USDT</pair>
+                    <priceDecimel>%.5f</priceDecimel>
                     <amountDecimel>%.2f</amountDecimel>
                     <limitAmount>0.001</limitAmount>
                 </coin>
