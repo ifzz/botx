@@ -87,7 +87,7 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 		}
 		value += (klines1min[i].Open - klines1min[9].Open) / klines1min[9].Open
 	}
-	Printf("1min %.4f\n", value)
+	//Printf("1min %.4f\n", value)
 	if (klines1min[0].Open - klines1min[9].Open) / klines1min[9].Open > 0.2 {
 		Printf("涨幅超过20%，不最长\n")
 		value = 0
@@ -128,9 +128,9 @@ func Start(exc api.API, exchangeCfg SExchange, stat *int) {
 		counter = 60//等待10分钟
 
 		//scan all coin
-		//var candidatePair  api.CurrencyPair
-		//amountDecimel:=""
-		//priceDecimel:=""
+		var candidatePair  api.CurrencyPair
+		amountDecimel:=""
+		priceDecimel:=""
 		var canbuyValue float64 = 0
 		usdtAmount := GetAvailableAmount(exchange, &api.USDT)
 		if usdtAmount < config.BuyLimitMoney {
@@ -152,12 +152,13 @@ func Start(exc api.API, exchangeCfg SExchange, stat *int) {
 
 			if canbuy > canbuyValue {
 				canbuyValue = canbuy
-				//candidatePair = pair
-				//amountDecimel = coin.AmountDecimel
-				//priceDecimel = coin.PriceDecimel
+				candidatePair = pair
+				amountDecimel = coin.AmountDecimel
+				priceDecimel = coin.PriceDecimel
 			}
 			time.Sleep(time.Second)
 		}
+		Printf("op: %s,%s,%s: value: %.4f\n", candidatePair.String(), amountDecimel,priceDecimel, canbuyValue)
 		/*
 		if canbuyValue > 0.05 {
 
