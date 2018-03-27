@@ -18,7 +18,7 @@ const (
 	MARKET_URL    = "http://api.bitkk.com/data/v1/"
 	TICKER_API    = "ticker?market=%s"
 	DEPTH_API     = "depth?market=%s&size=%d"
-	KLINE_API 	  = "kline?market=%s&type=%s"
+	KLINE_API 	  = "kline?market=%s&type=%s&size=%s"
 
 	TRADE_URL                 = "https://trade.bitkk.com/api/"
 	GET_ACCOUNT_API           = "getAccountInfo"
@@ -395,7 +395,7 @@ func (zb *Zb) GetOrderHistorys(currency CurrencyPair, currentPage, pageSize int)
 
 func (zb *Zb) GetKlineRecords(currency CurrencyPair, period, size, since string) ([]Kline, error) {
 
-	resp, err := HttpGet(zb.httpClient, MARKET_URL+fmt.Sprintf(KLINE_API, currency.ToSymbol("_"), period))
+	resp, err := HttpGet(zb.httpClient, MARKET_URL+fmt.Sprintf(KLINE_API, currency.ToSymbol("_"), period, size))
 	if err != nil {
 		return nil, err
 	}

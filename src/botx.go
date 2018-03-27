@@ -65,15 +65,7 @@ func main() {
 			Printf("[%s] zb\n", TimeNow())
 			exchange = zb.New(http.DefaultClient,
 				v.ApiKey, v.SecretKey)
-			klines,err := exchange.GetKlineRecords(api.BTC_USDT,"1min","1000","")
-			if err != nil {
-				Printf("err: %s\n", err.Error())
-			}else {
-				for _,kline := range klines {
-					Printf("%.4f %.4f %.4f %.4f %.4f\n", kline.Open, kline.Close, kline.High, kline.Low, kline.Vol)
-				}
-			}
-			return
+
 			break
 		case "OKEX":
 			Printf("[%s] ok\n", TimeNow())
