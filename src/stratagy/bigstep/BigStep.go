@@ -16,6 +16,7 @@ var exchange api.API
 var config SExchange
 
 func checking(exchange api.API, pair api.CurrencyPair) float64 {
+	/*
 	//一天
 	klines1hour,err := exchange.GetKlineRecords(pair,"1hour","24","")
 	if err != nil {
@@ -37,8 +38,9 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 		return 0
 	}
 	time.Sleep(time.Second)
+	*/
 	//1分钟
-	klines1min,err := exchange.GetKlineRecords(pair,"1min","30","")
+	klines1min,err := exchange.GetKlineRecords(pair,"1min","50","")
 	if err != nil {
 		Printf("err: %s\n", err.Error())
 		return 0
@@ -50,6 +52,7 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 
 	var value float64 = 0
 
+	/*
 	//当前价格比12小时前不低于-5%
 	value += (klines1hour[11].Open - klines1hour[0].Open) / klines1hour[0].Open
 
@@ -75,7 +78,7 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 
 	}
 	Printf("5min %.4f\n", value)
-
+	*/
 	//最近10分钟连续涨
 	for i:=0;i<10;i++ {
 		if klines1min[i].Open < klines1min[9].Open {
@@ -84,6 +87,7 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 		}
 		value += (klines1min[i].Open - klines1min[9].Open) / klines1min[9].Open
 	}
+	Printf("1min %.4f\n", value)
 	if (klines1min[0].Open - klines1min[9].Open) / klines1min[9].Open > 0.2 {
 		Printf("涨幅超过20%，不最长\n")
 		value = 0
@@ -155,7 +159,7 @@ func Start(exc api.API, exchangeCfg SExchange, stat *int) {
 			time.Sleep(time.Second)
 		}
 		/*
-		if canbuyValue > 0 {
+		if canbuyValue > 0.05 {
 
 			ticker, err := exchange.GetTicker(candidatePair)
 			if err != nil {
