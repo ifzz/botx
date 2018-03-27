@@ -63,7 +63,9 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 	for i:=0;i<4;i++ {
 		v1 := klines5min[i+2].Open - klines5min[i+1].Open
 		v2 := klines5min[i+1].Open - klines5min[i].Open
-		value += (v1 - v2) / v2
+		if v2 != 0 {
+			value += (v1 - v2) / v2
+		}
 		Printf("%.4f\n", value)
 	}
 
