@@ -46,14 +46,17 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 
 	//当前价格比12小时前不低于-5%
 	value += (klines1hour[11].Open - klines1hour[0].Open) / klines1hour[0].Open
+	Printf("%.4f\n", value)
 
 	//1小时前开始涨了5%
 	for i:=0;i<4;i++ {
 		value += (klines15min[i+1].Open - klines15min[i].Open) / klines15min[i].Open
+		Printf("%.4f\n", value)
 	}
 	//5分钟连续涨幅
 	for i:=0;i<5;i++ {
 		value += (klines5min[i+1].Open - klines5min[i].Open) / klines5min[i].Open
+		Printf("%.4f\n", value)
 	}
 	///////30分钟连续上涨////////
 	//继续上涨，斜率
@@ -61,6 +64,7 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 		v1 := klines5min[i+2].Open - klines5min[i+1].Open
 		v2 := klines5min[i+1].Open - klines5min[i].Open
 		value += (v1 - v2) / v2
+		Printf("%.4f\n", value)
 	}
 
 	return value
