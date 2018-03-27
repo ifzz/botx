@@ -36,7 +36,13 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 		Printf("err: %s\n", err.Error())
 		return 0
 	}
-
+	time.Sleep(time.Second)
+	//1分钟
+	klines1min,err := exchange.GetKlineRecords(pair,"1min","30","")
+	if err != nil {
+		Printf("err: %s\n", err.Error())
+		return 0
+	}
 	//策略为：
 	/*
 		最近30分钟开始涨
@@ -46,29 +52,42 @@ func checking(exchange api.API, pair api.CurrencyPair) float64 {
 
 	//当前价格比12小时前不低于-5%
 	value += (klines1hour[11].Open - klines1hour[0].Open) / klines1hour[0].Open
-	Printf("%.4f\n", value)
+
+	Printf("12hour %.4f\n", value)
 
 	//1小时前开始涨了5%
 	for i:=0;i<4;i++ {
-		value += (klines15min[i+1].Open - klines15min[i].Open) / klines15min[i].Open
-		Printf("%.4f\n", value)
+		if klines15min[i].Open < klines15min[0].Open {
+			value = 0
+			break
+		}
+		value += (klines15min[i].Open - klines15min[0].Open) / klines15min[0].Open
+
 	}
+	Printf("15min %.4f\n", value)
 	//5分钟连续涨幅
 	for i:=0;i<5;i++ {
-		value += (klines5min[i+1].Open - klines5min[i].Open) / klines5min[i].Open
-		Printf("%.4f\n", value)
-	}
-	///////30分钟连续上涨////////
-	//继续上涨，斜率
-	for i:=0;i<4;i++ {
-		v1 := klines5min[i+2].Open - klines5min[i+1].Open
-		v2 := klines5min[i+1].Open - klines5min[i].Open
-		if v2 != 0 {
-			value += (v1 - v2) / v2
+		if klines5min[i].Open < klines5min[0].Open {
+			value = 0
+			break
 		}
-		Printf("%.4f\n", value)
-	}
+		value += (klines5min[i].Open - klines5min[0].Open) / klines5min[0].Open
 
+	}
+	Printf("5min %.4f\n", value)
+
+	//最近10分钟连续涨
+	for i:=0;i<10;i++ {
+		if klines1min[i].Open < klines1min[9].Open {
+			value = 0
+			break
+		}
+		value += (klines1min[i].Open - klines1min[9].Open) / klines1min[9].Open
+	}
+	if (klines1min[0].Open - klines1min[9].Open) / klines1min[9].Open > 0.2 {
+		Printf("涨幅超过20%，不最长\n")
+		value = 0
+	}
 	return value
 }
 
